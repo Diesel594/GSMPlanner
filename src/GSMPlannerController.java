@@ -1,16 +1,18 @@
 //Класс обеспечения взаимодействия "модели" и "вида" приложения
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
+import java.awt.geom.Arc2D;
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 
-/**
- * Created by Gerz on 07.06.2015.
- */
 public class GSMPlannerController {
     private GSMPlannerView plannerView;
     private GSMPlannerModel plannerModel;
+    private List<House> houseList = new ArrayList<>();
 
     public GSMPlannerController(GSMPlannerView plannerView, GSMPlannerModel plannerModel){
         this.plannerView = plannerView;
@@ -32,7 +34,39 @@ public class GSMPlannerController {
                         plannerView.setTxtBrowseText(coordinatesFile.getAbsolutePath());
                     }
                 }
+                if (button.getText().equals("Расчитать")) {
+                    houseList = parseDataFile(plannerView.getFileName());
+                }
             }
         }
+    }
+
+    private List<House> parseDataFile(String filePath) {
+        List<House> houseList = new ArrayList<>();
+        try {
+            FileReader fileReader = new FileReader(filePath);
+            BufferedReader bufferedReader = new BufferedReader(fileReader);
+            String dataLine;
+            while ((dataLine = bufferedReader.readLine())!= null) {
+                //Попытаться распарсить данные
+                if (dataLine.contains(" ")) {
+                    String[] dataLineParts = dataLine.split(" ");
+                    try {
+                        double latitude = Double.parseDouble(dataLineParts[0]);
+                        double longitude = Double.parseDouble(dataLineParts[1]);
+                        int population = Integer.parseInt(dataLineParts[2]);
+                        House newHouse = new House(latitude, longitude, population);
+                        houseList.add(newHouse);
+                    }catch (Exception e){
+                        System.out.println(e.getMessage());
+                    }
+                }
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return houseList;
     }
 }
