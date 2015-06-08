@@ -2,6 +2,7 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 
 public class GSMPlannerView extends JFrame{
     private JLabel lblBrowse = new JLabel("Файл с координатами: ");
@@ -9,16 +10,16 @@ public class GSMPlannerView extends JFrame{
     private JButton btnBrowse = new JButton("Обзор...");
     private JButton btnCalculate = new JButton("Расчитать");
     private JTable tblResult = new JTable();
+    private JPanel gsmPlannerPanel = new JPanel(new GridBagLayout());
 
     public GSMPlannerView() {
         //Размещаем объекты управления
-        JPanel gsmPlannerPanel = new JPanel(new GridBagLayout());
         this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.anchor = GridBagConstraints.NORTHWEST;
         gbc.weightx=0.0;
         this.setLayout(new GridBagLayout());
-        this.setSize(500,400);
+        this.setSize(500, 400);
 
         gsmPlannerPanel.setLayout(new GridBagLayout());
         GridBagConstraints constraints = new GridBagConstraints();
@@ -50,16 +51,29 @@ public class GSMPlannerView extends JFrame{
         constraints.anchor = GridBagConstraints.CENTER;
         gsmPlannerPanel.add(btnCalculate, constraints);
 
+        //TODO: доделать первоначальное заполнение таблицы
+        //http://alturl.com/hrw8b
+        //Таблица с результатами
+        //tblResult.setModel(new TblModel());
+
+        /*Object[] columnNames = {"Equipment","Latitude","Longitude","Capacity","Price"};
+        Object[][] data = {{"","","","",""}};*/
         constraints.gridx = GridBagConstraints.RELATIVE;
         constraints.gridy = 3;
         constraints.gridwidth = 3;
+        constraints.gridheight = GridBagConstraints.RELATIVE;
         constraints.insets = new Insets(15,5,0,0);
-        constraints.anchor = GridBagConstraints.CENTER;
-        gsmPlannerPanel.add(tblResult, constraints);
+        constraints.anchor = GridBagConstraints.NORTH;
+        gsmPlannerPanel.add(tblResult,constraints);
+//        gsmPlannerPanel.add(tblResult.getTableHeader(), constraints);
+        //gsmPlannerPanel.add(tblResult, constraints);
+
+        /*constraints.gridy = 4;
+        constraints.gridwidth = 3;
+        constraints.insets = new Insets(0,5,0,0);
+        gsmPlannerPanel.add(tblResult, constraints);*/
 
         this.add(gsmPlannerPanel,gbc);
-
-        fillUpTable();
     }
 
     public String getFileName() {
@@ -72,17 +86,15 @@ public class GSMPlannerView extends JFrame{
 
     public void addPlannerViewListener(ActionListener actionListener) {
         btnBrowse.addActionListener(actionListener);
+        btnCalculate.addActionListener(actionListener);
     }
 
-    public void displayErrorMessage(String meessage){
-        JOptionPane.showMessageDialog(this, meessage);
+    public void displayErrorMessage(String message){
+        JOptionPane.showMessageDialog(this, message);
     }
 
-    public void fillUpTable(){
-        String[] columnNames = {"Equipment",
-                "Latitude",
-                "Longitude",
-                "Capacity",
-                "Price"};
+    public void updateTblResult(TblModel tblModel){
+        tblResult = new JTable(tblModel);
+        System.out.println("test");
     }
 }

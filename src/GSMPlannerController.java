@@ -5,7 +5,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 public class GSMPlannerController {
@@ -33,16 +32,22 @@ public class GSMPlannerController {
                     }
                 }
                 if (button.getText().equals("Расчитать")) {
-                    //Получение списка домов из файла данных
-                    List<House> houseList = plannerModel.parseDataFile(plannerView.getFileName());
-                    //Добавление домов в карту
-                    plannerModel.fillUpMapWithHouses(houseList);
+                    if (!plannerView.getFileName().isEmpty()) {
+                        //Получение списка домов из файла данных
+                        List<House> houseList = plannerModel.parseDataFile(plannerView.getFileName());
+                        //Добавление домов в карту
+                        plannerModel.fillUpMapWithHouses(houseList);
+                    }
                     //Вывод координат в таблицу
-
+                    TblModel filledModel = plannerModel.fillUpTable();
+                    plannerView.updateTblResult(filledModel);
                 }
             }
         }
     }
 
-
+    //TODO: расчет координат
+    //x = R * cos(lat) * cos(lon)
+    //y = R * cos(lat) * sin(lon)
+    // z = R *sin(lat)
 }

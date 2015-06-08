@@ -1,4 +1,5 @@
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -8,6 +9,7 @@ import java.util.List;
 //Класс описания модели поведения
 public class GSMPlannerModel {
     private WorkMap workMap;
+    private ArrayList<String[]> tblArray;
 
     public GSMPlannerModel() {
        workMap = new WorkMap();
@@ -87,9 +89,13 @@ public class GSMPlannerModel {
                 }
             }
 
+        } catch (FileNotFoundException e) {
+            //e.printStackTrace();
+            System.out.println("Файл не найден");
         } catch (IOException e) {
             e.printStackTrace();
         }
+
 
         return houseList;
     }
@@ -115,5 +121,23 @@ public class GSMPlannerModel {
                     workMap.setRightTopY(house.getPosY());
             }
         }
+    }
+
+    public TblModel fillUpTable(){
+        //ArrayList<String[]> myData;
+        TblModel model; // наша модель таблицы
+        int countNewRow = 0;
+        String[] columnNames = {"Equipment",
+                "Latitude",
+                "Longitude",
+                "Capacity",
+                "Price"};
+        tblArray = new ArrayList<String[]>();
+        tblArray.add(new String[]{"1", "2", "3", "4", "5"});
+        tblArray.add(new String[]{"11", "21", "31", "41", "51"});
+        tblArray.add(new String[]{"12", "22", "32", "42", "52"});
+        tblArray.add(new String[]{"13", "23", "33", "43", "53"});
+        model = new TblModel(tblArray);
+        return model;
     }
 }
