@@ -50,7 +50,16 @@ public class GSMPlannerView extends JFrame{
         constraints.anchor = GridBagConstraints.CENTER;
         gsmPlannerPanel.add(btnCalculate, constraints);
 
+        constraints.gridx = GridBagConstraints.RELATIVE;
+        constraints.gridy = 3;
+        constraints.gridwidth = 3;
+        constraints.insets = new Insets(15,5,0,0);
+        constraints.anchor = GridBagConstraints.CENTER;
+        gsmPlannerPanel.add(tblResult, constraints);
+
         this.add(gsmPlannerPanel,gbc);
+
+        fillUpTable();
     }
 
     public String getFileName() {
@@ -61,11 +70,19 @@ public class GSMPlannerView extends JFrame{
         txtBrowse.setText(txtBrowseText);
     }
 
-    void addPlannerViewListener(ActionListener actionListener) {
+    public void addPlannerViewListener(ActionListener actionListener) {
         btnBrowse.addActionListener(actionListener);
     }
 
-    void displayErrorMessage(String meessage){
+    public void displayErrorMessage(String meessage){
         JOptionPane.showMessageDialog(this, meessage);
+    }
+
+    public void fillUpTable(){
+        String[] columnNames = {"Equipment",
+                "Latitude",
+                "Longitude",
+                "Capacity",
+                "Price"};
     }
 }

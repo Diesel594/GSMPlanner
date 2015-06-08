@@ -11,7 +11,6 @@ import java.util.List;
 public class GSMPlannerController {
     private GSMPlannerView plannerView;
     private GSMPlannerModel plannerModel;
-    private List<House> houseList = new ArrayList<>();
 
     public GSMPlannerController(GSMPlannerView plannerView, GSMPlannerModel plannerModel){
         this.plannerView = plannerView;
@@ -35,7 +34,7 @@ public class GSMPlannerController {
                 }
                 if (button.getText().equals("Расчитать")) {
                     //Получение списка домов из файла данных
-                    houseList = plannerModel.parseDataFile(plannerView.getFileName());
+                    List<House> houseList = plannerModel.parseDataFile(plannerView.getFileName());
                     //Добавление домов в карту
                     plannerModel.fillUpMapWithHouses(houseList);
                     //Вывод координат в таблицу
