@@ -1,18 +1,20 @@
 //Класс обеспечения взаимодействия "модели" и "вида" приложения
 
 import javax.swing.*;
-import java.awt.*;
+import javax.swing.text.html.HTMLDocument;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.geom.Arc2D;
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 
 public class GSMPlannerController {
     private GSMPlannerView plannerView;
     private GSMPlannerModel plannerModel;
     private List<House> houseList = new ArrayList<>();
+    private WorkMap workMap = new WorkMap();
 
     public GSMPlannerController(GSMPlannerView plannerView, GSMPlannerModel plannerModel){
         this.plannerView = plannerView;
@@ -36,6 +38,17 @@ public class GSMPlannerController {
                 }
                 if (button.getText().equals("Расчитать")) {
                     houseList = parseDataFile(plannerView.getFileName());
+                    for (Iterator<House> houseListIterator = houseList.iterator(); houseListIterator.hasNext(); ) {
+                        House house = houseListIterator.next();
+                        workMap.addHouse(house);
+                        // 1 - can call methods of element
+                        // 2 - can use iter.remove() to remove the current element from the list
+                        // 3 - can use iter.add(...) to insert a new element into the list
+                        //     between element and iter->next()
+                        // 4 - can use iter.set(...) to replace the current element
+
+                        // ...
+                    }
                 }
             }
         }
