@@ -6,10 +6,14 @@ public class WorkMap {
     private ArrayList<CellularStation> cellularStations;
     private ArrayList<ConnectionStation> connectionStations;
     private ArrayList<BaseStation> baseStations;
-    private double leftDownX;
-    private double leftDownY;
-    private double upRightX;
-    private double upRightY;
+    private double leftBottomX;
+    private double leftBottomY;
+    private double rightTopX;
+    private double rightTopY;
+
+    public WorkMap() {
+        leftBottomX = leftBottomY = rightTopX = rightTopY = 0.0;
+    }
 
     public ArrayList<House> getHouses() {
         return houses;
@@ -51,35 +55,35 @@ public class WorkMap {
         this.baseStations.add(baseStation);
     }
 
-    public double getLeftDownX() {
-        return leftDownX;
+    public double getLeftBottomX() {
+        return leftBottomX;
     }
 
-    public void setLeftDownX(double leftDownX) {
-        this.leftDownX = leftDownX;
+    public void setLeftBottomX(double leftBottomX) {
+        this.leftBottomX = leftBottomX;
     }
 
-    public double getLeftDownY() {
-        return leftDownY;
+    public double getLeftBottomY() {
+        return leftBottomY;
     }
 
-    public void setLeftDownY(double leftDownY) {
-        this.leftDownY = leftDownY;
+    public void setLeftBottomY(double leftBottomY) {
+        this.leftBottomY = leftBottomY;
     }
 
-    public double getUpRightX() {
-        return upRightX;
+    public double getRightTopX() {
+        return rightTopX;
     }
 
-    public void setUpRightX(double upRightX) {
-        this.upRightX = upRightX;
+    public void setRightTopX(double rightTopX) {
+        this.rightTopX = rightTopX;
     }
 
-    public double getUpRightY() {
-        return upRightY;
+    public double getRightTopY() {
+        return rightTopY;
     }
 
-    public void setUpRightY(double upRightY) {
-        this.upRightY = upRightY;
+    public void setRightTopY(double rightTopY) {
+        this.rightTopY = rightTopY;
     }
 }
