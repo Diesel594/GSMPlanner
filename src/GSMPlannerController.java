@@ -38,9 +38,10 @@ public class GSMPlannerController {
                         //Добавление домов в карту
                         plannerModel.fillUpMapWithHouses(houseList);
                     }
-                    //Вывод координат в таблицу
-                    TblModel filledModel = plannerModel.fillUpTable();
-                    plannerView.updateTblResult(filledModel);
+                    //Вывод координат
+                    // TblModel filledModel = plannerModel.fillUpTable();
+                    //plannerView.updateTblResult(filledModel);
+                    plannerView.showResult(plannerModel.getWorkMap());
                 }
             }
         }

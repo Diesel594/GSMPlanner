@@ -9,7 +9,7 @@ import java.util.List;
 //Класс описания модели поведения
 public class GSMPlannerModel {
     private WorkMap workMap;
-    private ArrayList<String[]> tblArray;
+    //private ArrayList<String[]> tblArray;
 
     public GSMPlannerModel() {
        workMap = new WorkMap();
@@ -67,6 +67,10 @@ public class GSMPlannerModel {
         workMap.setRightTopY(rightTopY);
     }
 
+    public WorkMap getWorkMap(){
+        return workMap;
+    }
+
     public List<House> parseDataFile(String filePath) {
         List<House> houseList = new ArrayList<>();
         try {
@@ -75,15 +79,16 @@ public class GSMPlannerModel {
             String dataLine;
             while ((dataLine = bufferedReader.readLine())!= null) {
                 //Попытаться распарсить данные
-                if (dataLine.contains(" ")) {
-                    String[] dataLineParts = dataLine.split(" ");
+                String[] dataLineParts = dataLine.split(";");
+                if (dataLineParts.length == 3) {
                     try {
                         double latitude = Double.parseDouble(dataLineParts[0]);
                         double longitude = Double.parseDouble(dataLineParts[1]);
                         int population = Integer.parseInt(dataLineParts[2]);
                         House newHouse = new House(latitude, longitude, population);
                         houseList.add(newHouse);
-                    }catch (Exception e){
+                    } catch (Exception e) {
+                        System.out.println("Неверный формат строки с данными.");
                         System.out.println(e.getMessage());
                     }
                 }
@@ -104,11 +109,10 @@ public class GSMPlannerModel {
         if (houses.size() > 0) {
             double mapLeftBottomX = houses.get(0).getPosX();
             double mapLeftBottomY = houses.get(0).getPosY();
-            double mapRightTopX = houses.get(0).getPosX();;
+            double mapRightTopX = houses.get(0).getPosX();
             double mapRightTopY = houses.get(0).getPosY();
 
-            for (Iterator<House> houseListIterator = houses.iterator(); houseListIterator.hasNext(); ) {
-                House house = houseListIterator.next();
+            for (House house : houses) {
                 this.addHouseToWorkMap(house);
                 //Нахождение крайних координат
                 if (house.getPosX() < workMap.getLeftBottomX())
@@ -123,7 +127,7 @@ public class GSMPlannerModel {
         }
     }
 
-    public TblModel fillUpTable(){
+    /*public TblModel fillUpTable(){
         //ArrayList<String[]> myData;
         TblModel model; // наша модель таблицы
         int countNewRow = 0;
@@ -139,5 +143,5 @@ public class GSMPlannerModel {
         tblArray.add(new String[]{"13", "23", "33", "43", "53"});
         model = new TblModel(tblArray);
         return model;
-    }
+    }*/
 }

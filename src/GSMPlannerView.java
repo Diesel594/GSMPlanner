@@ -86,8 +86,6 @@ public class GSMPlannerView extends JFrame{
     public void showResult(WorkMap workMap) {
         //Iterator<House> houseIterator = workMap.getHouses().iterator();
         for (House house : workMap.getHouses()) {
-        //for (Iterator<House> houseIterator = workMap.getHouses().iterator(); houseIterator.hasNext(); ){
-            //House house = houseIterator.next();
             txtResult.append(String.valueOf(house.getPosX()));
             txtResult.append(", ");
             txtResult.append(String.valueOf(house.getPosY()));

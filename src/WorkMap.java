@@ -12,6 +12,11 @@ public class WorkMap {
     private double rightTopY;
 
     public WorkMap() {
+        houses = new ArrayList<>();
+        sectors = new ArrayList<>();
+        cellularStations = new ArrayList<>();
+        connectionStations = new ArrayList<>();
+        baseStations = new ArrayList<>();
         leftBottomX = leftBottomY = rightTopX = rightTopY = 0.0;
     }
 
