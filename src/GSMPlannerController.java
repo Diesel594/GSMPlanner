@@ -44,19 +44,16 @@ public class GSMPlannerController {
                     plannerView.showResult(plannerModel.getWorkMap());
                     //TODO:убрать тестирование getDistance
                     //Тестирование getDistance
-                    if (plannerModel.getWorkMap().getHouses().size() > 1)
+                    if (plannerModel.getWorkMap().getHouses().size() > 1) {
+                        plannerView.showInfo("Мой расчет расстояния: ");
                         plannerView.showInfo(String.valueOf(plannerModel.getDistance(
                                 plannerModel.getWorkMap().getHouses().get(0).getPosX(),
                                 plannerModel.getWorkMap().getHouses().get(0).getPosY(),
                                 plannerModel.getWorkMap().getHouses().get(1).getPosX(),
                                 plannerModel.getWorkMap().getHouses().get(1).getPosY())));
+                    }
                 }
             }
         }
     }
-
-    //TODO: расчет координат
-    //x = R * cos(lat) * cos(lon)
-    //y = R * cos(lat) * sin(lon)
-    // z = R *sin(lat)
 }
