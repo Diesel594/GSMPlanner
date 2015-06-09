@@ -95,6 +95,10 @@ public class GSMPlannerView extends JFrame{
         }
     }
 
+    public void showInfo(String info) {
+        txtResult.append(info);
+    }
+
    /* public void updateTblResult(TblModel tblModel){
         tblResult = new JTable(tblModel);
         System.out.println("test");

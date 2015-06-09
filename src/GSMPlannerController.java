@@ -42,6 +42,14 @@ public class GSMPlannerController {
                     // TblModel filledModel = plannerModel.fillUpTable();
                     //plannerView.updateTblResult(filledModel);
                     plannerView.showResult(plannerModel.getWorkMap());
+                    //TODO:убрать тестирование getDistance
+                    //Тестирование getDistance
+                    if (plannerModel.getWorkMap().getHouses().size() > 1)
+                        plannerView.showInfo(String.valueOf(plannerModel.getDistance(
+                                plannerModel.getWorkMap().getHouses().get(0).getPosX(),
+                                plannerModel.getWorkMap().getHouses().get(0).getPosY(),
+                                plannerModel.getWorkMap().getHouses().get(1).getPosX(),
+                                plannerModel.getWorkMap().getHouses().get(1).getPosY())));
                 }
             }
         }

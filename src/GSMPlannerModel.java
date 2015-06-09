@@ -1,3 +1,5 @@
+import sun.plugin2.message.MarkTaintedMessage;
+
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -125,6 +127,10 @@ public class GSMPlannerModel {
                     workMap.setRightTopY(house.getPosY());
             }
         }
+    }
+
+    public double getDistance(double firstPointX, double firstPointY, double secondPointX, double secondPointY){
+        return Math.sqrt(Math.pow((secondPointX - firstPointX),2) + Math.pow((secondPointY - firstPointY), 2));
     }
 
     /*public TblModel fillUpTable(){
