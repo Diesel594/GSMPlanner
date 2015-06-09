@@ -44,12 +44,22 @@ public class GSMPlannerController {
                     plannerView.showResult(plannerModel.getWorkMap());
                     //TODO:убрать тестирование getDistance
                     //Тестирование getDistance
-                    if (plannerModel.getWorkMap().getHouses().size() > 1)
+                    if (plannerModel.getWorkMap().getHouses().size() > 1) {
+                        double geoX1 = plannerModel.getWorkMap().getHouses().get(0).getPosX();
+                        double geoY1 = plannerModel.getWorkMap().getHouses().get(0).getPosY();
+                        double geoX2 = plannerModel.getWorkMap().getHouses().get(1).getPosX();
+                        double geoY2 = plannerModel.getWorkMap().getHouses().get(1).getPosY();
+                        double xyzX1 = plannerModel.getPlaneX(geoX1, geoY1);
+                        double xyzY1 = plannerModel.getPlaneY(geoX1, geoY1);
+                        double xyzX2 = plannerModel.getPlaneX(geoX2, geoY2);
+                        double xyzY2 = plannerModel.getPlaneY(geoX2, geoY2);
+                        plannerView.showInfo("Географическое расстояние:");
                         plannerView.showInfo(String.valueOf(plannerModel.getDistance(
-                                plannerModel.getWorkMap().getHouses().get(0).getPosX(),
-                                plannerModel.getWorkMap().getHouses().get(0).getPosY(),
-                                plannerModel.getWorkMap().getHouses().get(1).getPosX(),
-                                plannerModel.getWorkMap().getHouses().get(1).getPosY())));
+                                geoX1, geoY1, geoX2, geoY2)));
+                        plannerView.showInfo("Декартово расстояние:");
+                        plannerView.showInfo(String.valueOf(plannerModel.getDistance(
+                                xyzX1, xyzY1, xyzX2, xyzY2)));
+                    }
                 }
             }
         }

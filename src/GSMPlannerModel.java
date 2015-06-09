@@ -10,6 +10,7 @@ import java.util.List;
 
 //Класс описания модели поведения
 public class GSMPlannerModel {
+    final double EARTH_RADIUS = 6371.0; //Примерный радиус Земли
     private WorkMap workMap;
     //private ArrayList<String[]> tblArray;
 
@@ -131,6 +132,14 @@ public class GSMPlannerModel {
 
     public double getDistance(double firstPointX, double firstPointY, double secondPointX, double secondPointY){
         return Math.sqrt(Math.pow((secondPointX - firstPointX),2) + Math.pow((secondPointY - firstPointY), 2));
+    }
+
+    public double getPlaneX(double lat, double lon) {
+        return EARTH_RADIUS * Math.cos(lat) * Math.cos(lon);
+    }
+
+    public double getPlaneY(double lat, double lon) {
+        return EARTH_RADIUS * Math.cos(lat) * Math.sin(lon);
     }
 
     /*public TblModel fillUpTable(){
