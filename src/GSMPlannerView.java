@@ -3,6 +3,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.Iterator;
 
 public class GSMPlannerView extends JFrame{
     private JLabel lblBrowse = new JLabel("Файл с координатами: ");
@@ -11,6 +12,7 @@ public class GSMPlannerView extends JFrame{
     private JButton btnCalculate = new JButton("Расчитать");
     private JTable tblResult = new JTable();
     private JPanel gsmPlannerPanel = new JPanel(new GridBagLayout());
+    private JTextArea txtResult = new JTextArea();
 
     public GSMPlannerView() {
         //Размещаем объекты управления
@@ -51,27 +53,15 @@ public class GSMPlannerView extends JFrame{
         constraints.anchor = GridBagConstraints.CENTER;
         gsmPlannerPanel.add(btnCalculate, constraints);
 
-        //TODO: доделать первоначальное заполнение таблицы
-        //http://alturl.com/hrw8b
-        //Таблица с результатами
-        //tblResult.setModel(new TblModel());
-
-        /*Object[] columnNames = {"Equipment","Latitude","Longitude","Capacity","Price"};
-        Object[][] data = {{"","","","",""}};*/
         constraints.gridx = GridBagConstraints.RELATIVE;
         constraints.gridy = 3;
         constraints.gridwidth = 3;
         constraints.gridheight = GridBagConstraints.RELATIVE;
         constraints.insets = new Insets(15,5,0,0);
         constraints.anchor = GridBagConstraints.NORTH;
-        gsmPlannerPanel.add(tblResult,constraints);
-//        gsmPlannerPanel.add(tblResult.getTableHeader(), constraints);
-        //gsmPlannerPanel.add(tblResult, constraints);
+        gsmPlannerPanel.add(txtResult,constraints);
 
-        /*constraints.gridy = 4;
-        constraints.gridwidth = 3;
-        constraints.insets = new Insets(0,5,0,0);
-        gsmPlannerPanel.add(tblResult, constraints);*/
+
 
         this.add(gsmPlannerPanel,gbc);
     }
@@ -93,8 +83,22 @@ public class GSMPlannerView extends JFrame{
         JOptionPane.showMessageDialog(this, message);
     }
 
-    public void updateTblResult(TblModel tblModel){
+    public void showResult(WorkMap workMap) {
+        //Iterator<House> houseIterator = workMap.getHouses().iterator();
+        for (House house : workMap.getHouses()) {
+        //for (Iterator<House> houseIterator = workMap.getHouses().iterator(); houseIterator.hasNext(); ){
+            //House house = houseIterator.next();
+            txtResult.append(String.valueOf(house.getPosX()));
+            txtResult.append(", ");
+            txtResult.append(String.valueOf(house.getPosY()));
+            txtResult.append(", ");
+            txtResult.append(String.valueOf(house.getPopulation()));
+            txtResult.append(";\n");
+        }
+    }
+
+   /* public void updateTblResult(TblModel tblModel){
         tblResult = new JTable(tblModel);
         System.out.println("test");
-    }
+    }*/
 }
