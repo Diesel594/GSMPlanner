@@ -1,11 +1,8 @@
-import sun.plugin2.message.MarkTaintedMessage;
-
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 //Класс описания модели поведения
@@ -38,35 +35,35 @@ public class GSMPlannerModel {
     }
 
     public double getWorkMapLeftBottomX (){
-        return workMap.getLeftBottomX();
+        return workMap.getLeftLongitude();
     }
 
     public double getWorkMapLeftBottomY() {
-        return workMap.getLeftBottomY();
+        return workMap.getBottomLatitude();
     }
 
     public double getWorkMapRightTopX(){
-        return workMap.getRightTopX();
+        return workMap.getRightLongitude();
     }
 
     public double getWorkMapRightTopY(){
-        return workMap.getRightTopY();
+        return workMap.getTopLatitude();
     }
 
     public void setWorkMapLeftBottomX(double leftBottomX) {
-        workMap.setLeftBottomX(leftBottomX);
+        workMap.setLeftLongitude(leftBottomX);
     }
 
     public void setWorkMapLeftBottomY(double leftBottomY) {
-        workMap.setLeftBottomY(leftBottomY);
+        workMap.setBottomLatitude(leftBottomY);
     }
 
     public void setWorkMapRightTopX(double rightTopX){
-        workMap.setRightTopX(rightTopX);
+        workMap.setRightLongitude(rightTopX);
     }
 
     public void setWorkMapRightTopY(double rightTopY){
-        workMap.setRightTopY(rightTopY);
+        workMap.setTopLatitude(rightTopY);
     }
 
     public WorkMap getWorkMap(){
@@ -109,23 +106,28 @@ public class GSMPlannerModel {
 
     public void fillUpMapWithHouses (List<House> houses){
         if (houses.size() > 0) {
-            double mapLeftBottomX = houses.get(0).getPosX();
-            double mapLeftBottomY = houses.get(0).getPosY();
-            double mapRightTopX = houses.get(0).getPosX();
-            double mapRightTopY = houses.get(0).getPosY();
+            double bottomLatitude = houses.get(0).getLatitude();
+            double topLatitude = houses.get(0).getLatitude();
+            double leftLongitude = houses.get(0).getLongitude();
+            double rightLongitude = houses.get(0).getLongitude();
 
             for (House house : houses) {
                 this.addHouseToWorkMap(house);
                 //Нахождение крайних координат
-                if (house.getPosX() < workMap.getLeftBottomX())
-                    workMap.setLeftBottomX(house.getPosX());
-                else if (house.getPosX() > workMap.getRightTopX())
-                    workMap.setRightTopX(house.getPosX());
-                if (house.getPosY() < workMap.getLeftBottomY())
-                    workMap.setLeftBottomY(house.getPosY());
-                else if (house.getPosY() > workMap.getRightTopY())
-                    workMap.setRightTopY(house.getPosY());
+                if (house.getLatitude() < bottomLatitude)
+                    bottomLatitude = house.getLatitude();
+                else if (house.getLatitude() > topLatitude)
+                    topLatitude = house.getLatitude();
+                if (house.getLongitude() < leftLongitude)
+                    leftLongitude = house.getLongitude();
+                else if (house.getLongitude() > rightLongitude)
+                    rightLongitude = house.getLongitude();
             }
+            // Установка границ карты по крайним домам
+            workMap.setBottomLatitude(bottomLatitude);
+            workMap.setLeftLongitude(leftLongitude);
+            workMap.setTopLatitude(topLatitude);
+            workMap.setRightLongitude(rightLongitude);
         }
     }
 
@@ -144,6 +146,12 @@ public class GSMPlannerModel {
         dist = rad2deg(dist);
         dist = dist * 60.0 * 1.853159616;
         return (dist);
+    }
+
+    private void placeSectors() {
+        //Перемещаемся вверх увеличивая широту опорной точки соты на 5 км
+        //for (double lat = workMap.)
+        //Перемещаемся вверх увеличивая широту опорной точки соты на 5 км
     }
 
     /*public TblModel fillUpTable(){
