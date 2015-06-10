@@ -1,10 +1,13 @@
-/**
- * Created by Gerz on 07.06.2015.
- */
 public class Sector extends Equipment {
     private CellularStation cellularStation;
-    public Sector(double posX, double posY, int capacity, double price) {
-        super(posX, posY, capacity, price);
+    private int direction;
+    public Sector(double latitude, double longitude, int direction, int capacity, double price) {
+        super(latitude, longitude, capacity, price);
+        this.direction = direction;
+    }
+
+    public int getDirection(){
+        return this.direction;
     }
 
     public void setCellularStation(CellularStation cellularStation){

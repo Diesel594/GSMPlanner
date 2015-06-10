@@ -8,8 +8,11 @@ import java.util.List;
 //Класс описания модели поведения
 public class GSMPlannerModel {
     final double EARTH_RADIUS = 6371.0; //Примерный радиус Земли
+    final int SECTOR_CAPACITY = 100;
+    final double SECTOR_PRICE = 1000;
+
     private WorkMap workMap;
-    public final static double R = 6371.0; // aproximate Earth radius
+    public final static double R = 6371.0; // approximate Earth radius
 
     public GSMPlannerModel() {
        workMap = new WorkMap();
@@ -173,21 +176,21 @@ public class GSMPlannerModel {
         // В масштабах Земли размерами города можно пренебречь. Поэтому мы высчитываем длину градуса широты и долготы один раз
         // Перемещаемся вверх увеличивая широту опорной точки соты на 5 км
         double latitudeKilometerLength = getLatitudeKilometerLength(workMap.getBottomLatitude()); // Вычисляем значение протяженности 5км в градусах по широте
-        double longtitudeKilometerLength = getLongitudeKilometerLength(workMap.getLeftLongitude()); // Вычисляем значение протяженности 5км в градусах по долготе
+        double longitudeKilometerLength = getLongitudeKilometerLength(workMap.getLeftLongitude()); // Вычисляем значение протяженности 5км в градусах по долготе
 
         // начиная с нижней широты, мы поднимаемся к верхней с шагом в 5 км в градусах
-        for (double latitude = workMap.getBottomLatitude(); latitude < workMap.getTopLatitude(); latitude = latitude + longtitudeKilometerLength * 5.0) {
+        for (double latitude = workMap.getBottomLatitude(); latitude < workMap.getTopLatitude(); latitude = latitude + longitudeKilometerLength * 5.0) {
             // начиная с левой долготы, двигаемся вправо с шагом 5 км в градусах
             for (double longitude = workMap.getLeftLongitude(); latitude < workMap.getRightLongitude(); longitude = latitudeKilometerLength * 5.0) {
 
                 //TODO: изменение опорной точки сектора вместе с изменением номера четверти
                 //можно даже попробовать изменение координат через функцию от номера четверти
                 // поиск оптимальной установки сектора только после подтверждения наличия домов в квадрате
-                if(isHousesInArea(latitude, longitude, latitudeKilometerLength, longtitudeKilometerLength)) {
+                if(isHousesInArea(latitude, longitude, latitudeKilometerLength, longitudeKilometerLength)) {
                     // устанавливаем сектор 4-мя разными способами, определяя оптимальный по покрытию
                     // ориентир установки - номер четверти круга (как в сетке декартовых координат)
-                    int maxCustomeres = 0; // переменная, с помощью которой выясним самую оптимальную четверть
-                    int bestQuater = 0;
+                    int maxCustomers = 0; // переменная, с помощью которой выясним самую оптимальную четверть
+                    int bestQuarter = 0;
                     double sectorLatitude = latitude;
                     double sectorLongitude = longitude;
                     double sectorStartLatitude = latitude;
@@ -195,102 +198,48 @@ public class GSMPlannerModel {
                     double sectorEndLatitude = latitude;
                     double sectorEndLongitude = longitude;
 
-                    //1-я четверь
-                    // обозначаем сектор
-                    sectorStartLatitude = latitude + longtitudeKilometerLength * 5;
-                    sectorStartLongitude = longitude;
-                    sectorEndLatitude = latitude;
-                    sectorEndLongitude = longitude + latitudeKilometerLength * 5;
-                    //перебираем дома в секторе
-                    int tmpCustomers = 0;
-                    for (House house : workMap.getHouses()) {
-                        if (
-                                isInsideSector(
-                                        house.getLatitude(), house.getLongitude(),
-                                        sectorLatitude, sectorLongitude,
-                                        sectorStartLatitude, sectorStartLongitude,
-                                        sectorEndLatitude,sectorEndLongitude,
-                                        Math.max(latitudeKilometerLength,longtitudeKilometerLength))
-                                )
-                            tmpCustomers = tmpCustomers + house.getPopulation();
-                    }
-                    maxCustomeres = tmpCustomers;
-
-                    // 2-я четверь
-                    // обозначаем сектор
-                    sectorStartLatitude = latitude;
-                    sectorStartLongitude = longitude + latitudeKilometerLength * 5;
-                    sectorEndLatitude = latitude - longtitudeKilometerLength * 5;
-                    sectorEndLongitude = longitude;
-                    //перебираем дома в секторе
-                    tmpCustomers = 0;
-                    for (House house : workMap.getHouses()) {
-                        if (
-                                isInsideSector(
-                                        house.getLatitude(), house.getLongitude(),
-                                        sectorLatitude, sectorLongitude,
-                                        sectorStartLatitude, sectorStartLongitude,
-                                        sectorEndLatitude,sectorEndLongitude,
-                                        Math.max(latitudeKilometerLength,longtitudeKilometerLength))
-                                )
-                            tmpCustomers = tmpCustomers + house.getPopulation();
-                    }
-                    if (tmpCustomers > maxCustomeres) {
-                        bestQuater = 2;
-                        maxCustomeres = tmpCustomers;
+                    for (int quarter = 1; quarter <= 4; quarter++) {
+                        int tmpCustomers = getPossibleSectorCustomersInArea(latitude, longitude,latitudeKilometerLength,longitudeKilometerLength,quarter);
+                        if (tmpCustomers > maxCustomers){
+                            maxCustomers = tmpCustomers;
+                            bestQuarter = quarter;
+                        }
                     }
 
-                    // 3-я четверь
-                    // обозначаем сектор
-                    sectorStartLatitude = latitude - longtitudeKilometerLength * 5;
-                    sectorStartLongitude = longitude;
-                    sectorEndLatitude = latitude;
-                    sectorEndLongitude = longitude - latitudeKilometerLength * 5;
-                    //перебираем дома в секторе
-                    tmpCustomers = 0;
-                    for (House house : workMap.getHouses()) {
-                        if (
-                                isInsideSector(
-                                        house.getLatitude(), house.getLongitude(),
-                                        sectorLatitude, sectorLongitude,
-                                        sectorStartLatitude, sectorStartLongitude,
-                                        sectorEndLatitude,sectorEndLongitude,
-                                        Math.max(latitudeKilometerLength,longtitudeKilometerLength))
-                                )
-                            tmpCustomers = tmpCustomers + house.getPopulation();
-                    }
-                    if (tmpCustomers > maxCustomeres) {
-                        bestQuater = 3;
-                        maxCustomeres = tmpCustomers;
-                    }
+                    // установка в карту лучшего решения с указанием четверти
+                    workMap.addSector(new Sector(latitude, longitude, bestQuarter, SECTOR_CAPACITY, SECTOR_PRICE));
 
-                    // 4-я четверь
-                    // обозначаем сектор
-                    sectorStartLatitude = latitude;
-                    sectorStartLongitude = longitude - latitudeKilometerLength * 5;
-                    sectorEndLatitude = latitude + longtitudeKilometerLength * 5;
-                    sectorEndLongitude = longitude;
-                    //перебираем дома в секторе
-                    tmpCustomers = 0;
-                    for (House house : workMap.getHouses()) {
-                        if (
-                                isInsideSector(
-                                        house.getLatitude(), house.getLongitude(),
-                                        sectorLatitude, sectorLongitude,
-                                        sectorStartLatitude, sectorStartLongitude,
-                                        sectorEndLatitude,sectorEndLongitude,
-                                        Math.max(latitudeKilometerLength,longtitudeKilometerLength))
-                                )
-                            tmpCustomers = tmpCustomers + house.getPopulation();
+                    // определение необходимости установки зеркального сектора
+                    int customersInArea = getCustomersInArea(latitude, longitude, latitudeKilometerLength, longitudeKilometerLength);
+                    int customersInSector = getPossibleSectorCustomersInArea(latitude, longitude, latitudeKilometerLength, longitudeKilometerLength, bestQuarter);
+                    if (customersInArea > customersInSector) {
+                        // требуется установка противолежащего сектора для покрытия всего квадрата
+                        // выбор координат и направления для зеркального сектора
+                        int quarter = 0;
+                        switch (bestQuarter){
+                            case 1:
+                                latitude = latitude + longitudeKilometerLength * 5;
+                                longitude = longitude + latitudeKilometerLength * 5;
+                                quarter = 3;
+                                break;
+                            case 2:
+                                latitude = latitude - longitudeKilometerLength * 5;
+                                longitude = longitude + latitudeKilometerLength * 5;
+                                quarter = 4;
+                                break;
+                            case 3:
+                                latitude = latitude - longitudeKilometerLength * 5;
+                                longitude = longitude - latitudeKilometerLength * 5;
+                                quarter = 1;
+                                break;
+                            case 4:
+                                latitude = latitude + longitudeKilometerLength * 5;
+                                longitude = longitude - latitudeKilometerLength * 5;
+                                quarter = 2;
+                                break;
+                        }
+                        workMap.addSector(new Sector(latitude, longitude, quarter, SECTOR_CAPACITY, SECTOR_PRICE));
                     }
-                    if (tmpCustomers > maxCustomeres) {
-                        bestQuater = 4;
-                        maxCustomeres = tmpCustomers;
-                    }
-
-                    //TODO: установка в карту лучшего решения с указанием четверти
-
-                    //TODO: определение необходимости установки зеркального сектора
                 }
             }
         }
@@ -315,33 +264,29 @@ public class GSMPlannerModel {
     private double getLatitudeKilometerLength (double latitude) {
         double rlat = deg2rad(latitude); // Переводим широту в радианы
         double metersInDegree = 111132.92 - 559.82*Math.cos(2 * rlat) + 1.175*Math.cos(4*rlat); // Вычисляем количество метров в градусе
-        double latitudeKilometerLength = 1000/metersInDegree; // Вычисляем значение 1000 метров в градусах
-        return latitudeKilometerLength;
+        return 1000/metersInDegree; // Вычисляем значение 1000 метров в градусах
     }
 
     private double getLongitudeKilometerLength (double longitude) {
         double rlon = deg2rad(longitude);
         double metersInDegree = 111412.84 * Math.cos(rlon) - 93.5 * Math.cos(3 * rlon); // Вычисляем количество метров в градусе
-        double longtitudeKilometerLength = 1000/metersInDegree; // Вычисляем значение 1000 метров в градусах
-        return longtitudeKilometerLength;
+        return 1000/metersInDegree; // Вычисляем значение 1000 метров в градусах
     }
 
-    boolean isHousesInArea(double latitude, double longitude, double latitudeKilometerLength, double longtitudeKilometerLength) {
+    boolean isHousesInArea(double latitude, double longitude, double latitudeKilometerLength, double longitudeKilometerLength) {
         // перебираем дома с целью найти дом в заданом квадарате
         for (House house : workMap.getHouses()) {
-            if (isInsideArea(latitude, longitude, latitudeKilometerLength, longtitudeKilometerLength, house.getLatitude(), house.getLongitude()))
+            if (isInsideArea(latitude, longitude, latitudeKilometerLength, longitudeKilometerLength, house.getLatitude(), house.getLongitude()))
                 return true;
         }
         return false;
     }
 
-    boolean isInsideArea (double latitude, double longitude, double latitudeKilometerLength, double longtitudeKilometerLength, double objectLatitude, double objectLongitude) {
-        if ((objectLatitude >= latitude) &&
-                    (objectLatitude <= (latitude + (longtitudeKilometerLength*5)))&&
-                    (objectLongitude >= longitude) &&
-                    (objectLongitude <= (longitude +(latitudeKilometerLength*5))))
-                return true;
-        return false;
+    private boolean isInsideArea(double latitude, double longitude, double latitudeKilometerLength, double longtitudeKilometerLength, double objectLatitude, double objectLongitude) {
+        return (objectLatitude >= latitude) &&
+                (objectLatitude <= (latitude + (longtitudeKilometerLength * 5))) &&
+                (objectLongitude >= longitude) &&
+                (objectLongitude <= (longitude + (latitudeKilometerLength * 5)));
     }
 
     private boolean isInsideSector(double objectLatitude, double objectLongitude,
@@ -367,12 +312,81 @@ public class GSMPlannerModel {
         return (v1Longitude*v2Latitude - v1Latitude*v2Longitude) > 0;
     }
 
-    public double getPlaneX(double lat, double lon) {
-        return EARTH_RADIUS * Math.cos(lat) * Math.cos(lon);
+    public double getPlaneX(double latitude, double longitude) {
+        return EARTH_RADIUS * Math.cos(latitude) * Math.cos(longitude);
     }
 
-    public double getPlaneY(double lat, double lon) {
-        return EARTH_RADIUS * Math.cos(lat) * Math.sin(lon);
+    public double getPlaneY(double latitude, double longitude) {
+        return EARTH_RADIUS * Math.cos(latitude) * Math.sin(longitude);
+    }
+
+    private int getCustomersInArea(
+            double latitude,
+            double longitude,
+            double latitudeKilometerLength,
+            double longitudeKilometerLength) {
+        int customersCount = 0;
+        //перебираем дома в секторе
+        for (House house : workMap.getHouses()) {
+            if (isInsideArea(latitude, longitude, latitudeKilometerLength, longitudeKilometerLength, house.getLatitude(), house.getLongitude()))
+                customersCount = customersCount + house.getPopulation();
+        }
+        return customersCount;
+    }
+
+    private int getPossibleSectorCustomersInArea(
+            double sectorLatitude,
+            double sectorLongitude,
+            double latitudeKilometerLength,
+            double longitudeKilometerLength,
+            int direction) {
+        double sectorStartLatitude;
+        double sectorStartLongitude;
+        double sectorEndLatitude;
+        double sectorEndLongitude;
+        int customersCount = 0;
+
+        switch (direction) {
+            case 1: sectorStartLatitude = sectorLatitude + longitudeKilometerLength * 5 * 1;
+                    sectorStartLongitude = sectorLongitude + longitudeKilometerLength * 5 * 0;
+                    sectorEndLatitude = sectorLatitude + longitudeKilometerLength * 5 * 0;
+                    sectorEndLongitude = sectorLongitude + latitudeKilometerLength * 5 * 1;
+                    break;
+
+            case 2: sectorStartLatitude = sectorLatitude + longitudeKilometerLength * 5 * 0;
+                    sectorStartLongitude = sectorLongitude + longitudeKilometerLength * 5 * 1;
+                    sectorEndLatitude = sectorLatitude + longitudeKilometerLength * 5 * -1;
+                    sectorEndLongitude = sectorLongitude + latitudeKilometerLength * 5 * 0;
+                    break;
+
+            case 3: sectorStartLatitude = sectorLatitude + longitudeKilometerLength * 5 * -1;
+                    sectorStartLongitude = sectorLongitude + longitudeKilometerLength * 5 * 0;
+                    sectorEndLatitude = sectorLatitude + longitudeKilometerLength * 5 * 0;
+                    sectorEndLongitude = sectorLongitude + latitudeKilometerLength * 5 * -1;
+                    break;
+
+            case 4: sectorStartLatitude = sectorLatitude + longitudeKilometerLength * 5 * 0;
+                    sectorStartLongitude = sectorLongitude + longitudeKilometerLength * 5 * -1;
+                    sectorEndLatitude = sectorLatitude + longitudeKilometerLength * 5 * 1;
+                    sectorEndLongitude = sectorLongitude + latitudeKilometerLength * 5 * 0;
+                    break;
+
+            default:
+                return -1;
+        }
+        //перебираем дома в секторе
+        for (House house : workMap.getHouses()) {
+            if (
+                    isInsideSector(
+                            house.getLatitude(), house.getLongitude(),
+                            sectorLatitude, sectorLongitude,
+                            sectorStartLatitude, sectorStartLongitude,
+                            sectorEndLatitude,sectorEndLongitude,
+                            Math.max(latitudeKilometerLength,longitudeKilometerLength))
+                    )
+                customersCount = customersCount + house.getPopulation();
+        }
+        return customersCount;
     }
 
     /*public TblModel fillUpTable(){
