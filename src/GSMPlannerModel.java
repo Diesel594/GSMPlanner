@@ -172,7 +172,7 @@ public class GSMPlannerModel {
         return (dist);
     }
 
-    private void placeSectors() {
+    public void placeSectors() {
         // В масштабах Земли размерами города можно пренебречь. Поэтому мы высчитываем длину градуса широты и долготы один раз
         // Перемещаемся вверх увеличивая широту опорной точки соты на 5 км
         double latitudeKilometerLength = getLatitudeKilometerLength(workMap.getBottomLatitude()); // Вычисляем значение протяженности 5км в градусах по широте
