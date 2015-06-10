@@ -33,15 +33,22 @@ public class GSMPlannerController {
                 }
                 if (button.getText().equals("Расчитать")) {
                     if (!plannerView.getFileName().isEmpty()) {
+
+                        //TODO: Объединить "Получение списка домов из файла данных" и "Добавление домов в карту" и вынести в отдельную функцию с аргументом plannerView.getFileName()
                         //Получение списка домов из файла данных
                         List<House> houseList = plannerModel.parseDataFile(plannerView.getFileName());
                         //Добавление домов в карту
                         plannerModel.fillUpMapWithHouses(houseList);
+                        //Добавление секторов
+                        plannerModel.placeSectors();
+                        //Вывод всех данных
+                        plannerView.showResult(plannerModel.getWorkMap());
+
                     }
                     //Вывод координат
                     // TblModel filledModel = plannerModel.fillUpTable();
                     //plannerView.updateTblResult(filledModel);
-                    plannerView.showResult(plannerModel.getWorkMap());
+
                 }
             }
         }

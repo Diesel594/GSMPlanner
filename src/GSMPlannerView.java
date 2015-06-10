@@ -82,7 +82,7 @@ public class GSMPlannerView extends JFrame{
     }
 
     public void showResult(WorkMap workMap) {
-        //Iterator<House> houseIterator = workMap.getHouses().iterator();
+        txtResult.append("Перечень зданий: \n");
         for (House house : workMap.getHouses()) {
             txtResult.append(String.valueOf(house.getLatitude()));
             txtResult.append(", ");
@@ -91,6 +91,20 @@ public class GSMPlannerView extends JFrame{
             txtResult.append(String.valueOf(house.getPopulation()));
             txtResult.append(";\n");
         }
+        txtResult.append("\tИтого зданий: "+ String.valueOf(workMap.getHouses().size() + "\n\n"));
+
+        txtResult.append("Перечень секторов: \n");
+        for (Sector sector : workMap.getSectors()){
+            txtResult.append("Сектор: ");
+            txtResult.append(String.valueOf(sector.getLatitude()));
+            txtResult.append(", ");
+            txtResult.append(String.valueOf(sector.getLongitude()));
+            txtResult.append(", ");
+            txtResult.append(String.valueOf(sector.getDirection()));
+            txtResult.append("четверть\n");
+        }
+        txtResult.append("\tИтого секторов: "+ String.valueOf(workMap.getSectors().size() + "\n\n"));
+
     }
 
     public void showInfo(String info) {
