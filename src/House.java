@@ -1,23 +1,23 @@
 /**
- * Created by Gerz on 07.06.2015.
+ * Класс объекта Дом. Включает в себя широту, долготу, количество жителей
  */
 public class House {
-    private double posX;
-    private double posY;
+    private double latitude;
+    private double longitude;
     private int population;
 
-    public House(double posX, double posY, int population) {
-        this.posX = posX;
-        this.posY = posY;
+    public House(double latitude, double longitude, int population) {
+        this.latitude = latitude;
+        this.longitude = longitude;
         this.population = population;
     }
 
-    public double getPosX(){
-        return this.posX;
+    public double getLatitude(){
+        return this.latitude;
     }
 
-    public double getPosY(){
-        return this.posY;
+    public double getLongitude(){
+        return this.longitude;
     }
 
     public int getPopulation(){

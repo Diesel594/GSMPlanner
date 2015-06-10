@@ -2,8 +2,6 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.Iterator;
 
 public class GSMPlannerView extends JFrame{
     private JLabel lblBrowse = new JLabel("Файл с координатами: ");
@@ -86,9 +84,9 @@ public class GSMPlannerView extends JFrame{
     public void showResult(WorkMap workMap) {
         //Iterator<House> houseIterator = workMap.getHouses().iterator();
         for (House house : workMap.getHouses()) {
-            txtResult.append(String.valueOf(house.getPosX()));
+            txtResult.append(String.valueOf(house.getLatitude()));
             txtResult.append(", ");
-            txtResult.append(String.valueOf(house.getPosY()));
+            txtResult.append(String.valueOf(house.getLongitude()));
             txtResult.append(", ");
             txtResult.append(String.valueOf(house.getPopulation()));
             txtResult.append(";\n");

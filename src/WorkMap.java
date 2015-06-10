@@ -1,15 +1,15 @@
 import java.util.ArrayList;
 
 public class WorkMap {
-    private ArrayList<House> houses;
-    private ArrayList<Sector> sectors;
-    private ArrayList<CellularStation> cellularStations;
-    private ArrayList<ConnectionStation> connectionStations;
-    private ArrayList<BaseStation> baseStations;
-    private double leftBottomX;
-    private double leftBottomY;
-    private double rightTopX;
-    private double rightTopY;
+    private ArrayList<House> houses; // Дома на карте
+    private ArrayList<Sector> sectors; // Секторы на карте
+    private ArrayList<CellularStation> cellularStations; // Сотовые станции на карте
+    private ArrayList<ConnectionStation> connectionStations; // Станции связи на карте
+    private ArrayList<BaseStation> baseStations; //Базовые станции на карте
+    private double leftLongitude; //Левая граница
+    private double bottomLatitude; //Нижняя граница
+    private double rightLongitude; //Правая граница
+    private double topLatitude; //Верхняя грацниа
 
     public WorkMap() {
         houses = new ArrayList<>();
@@ -17,7 +17,7 @@ public class WorkMap {
         cellularStations = new ArrayList<>();
         connectionStations = new ArrayList<>();
         baseStations = new ArrayList<>();
-        leftBottomX = leftBottomY = rightTopX = rightTopY = 0.0;
+        leftLongitude = bottomLatitude = rightLongitude = topLatitude = 0.0;
     }
 
     public ArrayList<House> getHouses() {
@@ -60,35 +60,35 @@ public class WorkMap {
         this.baseStations.add(baseStation);
     }
 
-    public double getLeftBottomX() {
-        return leftBottomX;
+    public double getLeftLongitude() {
+        return leftLongitude;
     }
 
-    public void setLeftBottomX(double leftBottomX) {
-        this.leftBottomX = leftBottomX;
+    public void setLeftLongitude(double leftLongitude) {
+        this.leftLongitude = leftLongitude;
     }
 
-    public double getLeftBottomY() {
-        return leftBottomY;
+    public double getBottomLatitude() {
+        return bottomLatitude;
     }
 
-    public void setLeftBottomY(double leftBottomY) {
-        this.leftBottomY = leftBottomY;
+    public void setBottomLatitude(double bottomLatitude) {
+        this.bottomLatitude = bottomLatitude;
     }
 
-    public double getRightTopX() {
-        return rightTopX;
+    public double getRightLongitude() {
+        return rightLongitude;
     }
 
-    public void setRightTopX(double rightTopX) {
-        this.rightTopX = rightTopX;
+    public void setRightLongitude(double rightLongitude) {
+        this.rightLongitude = rightLongitude;
     }
 
-    public double getRightTopY() {
-        return rightTopY;
+    public double getTopLatitude() {
+        return topLatitude;
     }
 
-    public void setRightTopY(double rightTopY) {
-        this.rightTopY = rightTopY;
+    public void setTopLatitude(double topLatitude) {
+        this.topLatitude = topLatitude;
     }
 }
