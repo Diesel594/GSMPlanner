@@ -7,12 +7,11 @@ import java.util.List;
 
 //Класс описания модели поведения
 public class GSMPlannerModel {
-    final double EARTH_RADIUS = 6371.0; //Примерный радиус Земли
+    final static double EARTH_RADIUS = 6371.0; //Примерный радиус Земли
     final int SECTOR_CAPACITY = 100;
     final double SECTOR_PRICE = 1000;
 
     private WorkMap workMap;
-    public final static double R = 6371.0; // approximate Earth radius
 
     public GSMPlannerModel() {
        workMap = new WorkMap();
@@ -143,7 +142,7 @@ public class GSMPlannerModel {
         return (deg * Math.PI / 180.0);
     }
 
-    private double getX(double latitude, double longitude) {
+    /*private double getX(double latitude, double longitude) {
         return GSMPlannerModel.R * Math.cos(latitude) * Math.cos(longitude);
     }
 
@@ -161,8 +160,9 @@ public class GSMPlannerModel {
 
     public double getLongitude (double x, double y) {
         return Math.atan2(y, x);
-    }
+    }*/
 
+    // Получает в градусах, считает в радианах, возвращает расстояние в КМ
     public double getDistance(double lat1, double lon1, double lat2, double lon2) {
         double theta = lon1 - lon2;
         double dist = Math.sin(deg2rad(lat1)) * Math.sin(deg2rad(lat2)) + Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.cos(deg2rad(theta));
@@ -183,20 +183,12 @@ public class GSMPlannerModel {
             // начиная с левой долготы, двигаемся вправо с шагом 5 км в градусах
             for (double longitude = workMap.getLeftLongitude(); longitude < workMap.getRightLongitude(); longitude = latitudeKilometerLength * 5.0) {
 
-                //TODO: изменение опорной точки сектора вместе с изменением номера четверти
-                //можно даже попробовать изменение координат через функцию от номера четверти
                 // поиск оптимальной установки сектора только после подтверждения наличия домов в квадрате
                 if(isHousesInArea(latitude, longitude, latitudeKilometerLength, longitudeKilometerLength)) {
                     // устанавливаем сектор 4-мя разными способами, определяя оптимальный по покрытию
                     // ориентир установки - номер четверти круга (как в сетке декартовых координат)
                     int maxCustomers = 0; // переменная, с помощью которой выясним самую оптимальную четверть
                     int bestQuarter = 0;
-                    double sectorLatitude = latitude;
-                    double sectorLongitude = longitude;
-                    double sectorStartLatitude = latitude;
-                    double sectorStartLongitude = longitude;
-                    double sectorEndLatitude = latitude;
-                    double sectorEndLongitude = longitude;
 
                     for (int quarter = 1; quarter <= 4; quarter++) {
                         int tmpCustomers = getPossibleSectorCustomersInArea(latitude, longitude,latitudeKilometerLength,longitudeKilometerLength,quarter);
@@ -263,13 +255,13 @@ public class GSMPlannerModel {
 
     private double getLatitudeKilometerLength (double latitude) {
         double rlat = deg2rad(latitude); // Переводим широту в радианы
-        double metersInDegree = 111132.92 - 559.82*Math.cos(2 * rlat) + 1.175*Math.cos(4*rlat); // Вычисляем количество метров в градусе
+        double metersInDegree = 111132.92 - 559.82*Math.cos(2 * rlat) + 1.175*Math.cos(4*rlat); // Вычисляем количество метров в градусе широты
         return 1000/metersInDegree; // Вычисляем значение 1000 метров в градусах
     }
 
     private double getLongitudeKilometerLength (double longitude) {
         double rlon = deg2rad(longitude);
-        double metersInDegree = 111412.84 * Math.cos(rlon) - 93.5 * Math.cos(3 * rlon); // Вычисляем количество метров в градусе
+        double metersInDegree = 111412.84 * Math.cos(rlon) - 93.5 * Math.cos(3 * rlon); // Вычисляем количество метров в градусе долготы
         return 1000/metersInDegree; // Вычисляем значение 1000 метров в градусах
     }
 
@@ -289,34 +281,6 @@ public class GSMPlannerModel {
                 (objectLongitude <= (longitude + (latitudeKilometerLength * 5)));
     }
 
-    private boolean isInsideSector(double objectLatitude, double objectLongitude,
-                                   double sectorLatitude, double sectorLongitude,
-                                   double sectorStartLatitude, double sectorStartLongitude,
-                                   double sectorEndLatitude, double sectorEndLongitude,
-                                   double radius) {
-        if ((objectLatitude == sectorLatitude) && (objectLongitude == sectorLongitude))
-            return true;
-
-        double radiusSquared = Math.pow(radius, 2);
-        double relPointLatitude = objectLatitude - sectorLatitude;
-        double relPointLongitude = objectLongitude - sectorLongitude;
-
-        return !areClockwise(sectorStartLatitude, sectorStartLongitude, relPointLatitude, relPointLongitude) &&
-                areClockwise(sectorEndLatitude, sectorEndLongitude, relPointLatitude, relPointLongitude) &&
-                isWithinRadius(relPointLatitude, relPointLongitude, radius);
-        /*return !areClockwise(sectorLatitude, sectorLongitude, relPointLatitude, relPointLongitude) &&
-                areClockwise(sectorEndLatitude, sectorLongitude, relPointLatitude, relPointLongitude) &&
-                isWithinRadius(relPointLatitude, relPointLongitude, radius);*/
-    }
-
-    private boolean isWithinRadius(double latitude, double longitude, double radius) {
-        double radiusSquared = Math.pow(radius, 2);
-        return (latitude*latitude + longitude*longitude) <= radiusSquared;
-    }
-
-    private boolean areClockwise(double v1Latitude, double v1Longitude, double v2Latitude, double v2Longitude) {
-        return ((- v1Latitude)*v2Longitude + v1Longitude*v2Latitude) > 0;
-    }
 
     public double getPlaneX(double latitude, double longitude) {
         return EARTH_RADIUS * Math.cos(latitude) * Math.cos(longitude);
@@ -353,28 +317,28 @@ public class GSMPlannerModel {
         int customersCount = 0;
 
         switch (direction) {
-            case 1: sectorStartLatitude = sectorLatitude + longitudeKilometerLength * 5 * 1;
-                    sectorStartLongitude = sectorLongitude + longitudeKilometerLength * 5 * 0;
-                    sectorEndLatitude = sectorLatitude + longitudeKilometerLength * 5 * 0;
-                    sectorEndLongitude = sectorLongitude + latitudeKilometerLength * 5 * 1;
-                    break;
-
-            case 2: sectorStartLatitude = sectorLatitude + longitudeKilometerLength * 5 * 0;
-                    sectorStartLongitude = sectorLongitude + longitudeKilometerLength * 5 * 1;
-                    sectorEndLatitude = sectorLatitude + longitudeKilometerLength * 5 * -1;
+            case 1: sectorStartLongitude = sectorLongitude + longitudeKilometerLength * 5 * 1;
+                    sectorStartLatitude = sectorLatitude + longitudeKilometerLength * 5 * 0;
                     sectorEndLongitude = sectorLongitude + latitudeKilometerLength * 5 * 0;
-                    break;
-
-            case 3: sectorStartLatitude = sectorLatitude + longitudeKilometerLength * 5 * -1;
-                    sectorStartLongitude = sectorLongitude + longitudeKilometerLength * 5 * 0;
-                    sectorEndLatitude = sectorLatitude + longitudeKilometerLength * 5 * 0;
-                    sectorEndLongitude = sectorLongitude + latitudeKilometerLength * 5 * -1;
-                    break;
-
-            case 4: sectorStartLatitude = sectorLatitude + longitudeKilometerLength * 5 * 0;
-                    sectorStartLongitude = sectorLongitude + longitudeKilometerLength * 5 * -1;
                     sectorEndLatitude = sectorLatitude + longitudeKilometerLength * 5 * 1;
+                    break;
+
+            case 2: sectorStartLongitude = sectorLongitude + longitudeKilometerLength * 5 * 0;
+                    sectorStartLatitude = sectorLatitude + longitudeKilometerLength * 5 * 1;
+                    sectorEndLongitude = sectorLongitude + latitudeKilometerLength * 5 * -1;
+                    sectorEndLatitude = sectorLatitude + longitudeKilometerLength * 5 * 0;
+                    break;
+
+            case 3: sectorStartLongitude = sectorLongitude + longitudeKilometerLength * 5 * -1;
+                    sectorStartLatitude = sectorLatitude + longitudeKilometerLength * 5 * 0;
                     sectorEndLongitude = sectorLongitude + latitudeKilometerLength * 5 * 0;
+                    sectorEndLatitude = sectorLatitude + longitudeKilometerLength * 5 * 1;
+                    break;
+
+            case 4: sectorStartLongitude = sectorLongitude + longitudeKilometerLength * 5 * 0;
+                    sectorStartLatitude = sectorLatitude + longitudeKilometerLength * 5 * -1;
+                    sectorEndLongitude = sectorLongitude + latitudeKilometerLength * 5 * 1;
+                    sectorEndLatitude = sectorLatitude + longitudeKilometerLength * 5 * 0;
                     break;
 
             default:
@@ -383,15 +347,73 @@ public class GSMPlannerModel {
         //перебираем дома в секторе
         for (House house : workMap.getHouses()) {
             boolean isInside = isInsideSector(
+                    deg2rad(house.getLatitude()), deg2rad(house.getLongitude()),
+                    deg2rad(sectorLatitude), deg2rad(sectorLongitude),
+                    deg2rad(sectorStartLatitude), deg2rad(sectorStartLongitude),
+                    deg2rad(sectorEndLatitude), deg2rad(sectorEndLongitude),
+                    Math.max(deg2rad(latitudeKilometerLength), deg2rad(longitudeKilometerLength)));
+            /*boolean isInside = isInsideSector(
                     house.getLatitude(), house.getLongitude(),
                     sectorLatitude, sectorLongitude,
                     sectorStartLatitude, sectorStartLongitude,
                     sectorEndLatitude,sectorEndLongitude,
-                    Math.max(latitudeKilometerLength,longitudeKilometerLength));
+                    Math.max(latitudeKilometerLength,longitudeKilometerLength));*/
             if (isInside)
                     customersCount = customersCount + house.getPopulation();
         }
         return customersCount;
+    }
+
+    private boolean isInsideSector(double objectLatitude, double objectLongitude,
+                                   double sectorLatitude, double sectorLongitude,
+                                   double sectorStartLatitude, double sectorStartLongitude,
+                                   double sectorEndLatitude, double sectorEndLongitude,
+                                   double radius) {
+
+        if ((objectLatitude == sectorLatitude) && (objectLongitude == sectorLongitude))
+            return true;
+
+        double relPointLatitude = objectLatitude - sectorLatitude;
+        double relPointLongitude = objectLongitude - sectorLongitude;
+
+//        return !areClockwise(sectorStartLongitude, sectorStartLatitude, objectLongitude, objectLatitude) &&
+//                areClockwise(sectorEndLongitude, sectorEndLatitude, objectLongitude, objectLatitude) &&
+//                isWithinRadius(relPointLongitude, relPointLatitude, radius*radius);
+
+        return !areClockwise(sectorStartLatitude, sectorStartLongitude, relPointLatitude, relPointLongitude) &&
+                areClockwise(sectorEndLatitude, sectorEndLongitude, relPointLatitude, relPointLongitude) &&
+                isWithinRadius(relPointLatitude, relPointLongitude, radius*radius);
+    }
+
+
+    /*private boolean isInsideSector(double objectLatitude, double objectLongitude,
+                                   double sectorLatitude, double sectorLongitude,
+                                   double sectorStartLatitude, double sectorStartLongitude,
+                                   double sectorEndLatitude, double sectorEndLongitude,
+                                   double radius) {
+
+        if ((objectLatitude == sectorLatitude) && (objectLongitude == sectorLongitude))
+            return true;
+
+        double relPointLatitude = objectLatitude - sectorLatitude;
+        double relPointLongitude = objectLongitude - sectorLongitude;
+
+        return !areClockwise(sectorStartLongitude, sectorStartLatitude, relPointLongitude, relPointLatitude) &&
+                areClockwise(sectorEndLongitude, sectorEndLatitude, relPointLongitude, relPointLatitude) &&
+                isWithinRadius(relPointLongitude, relPointLatitude, radius*radius);
+
+        *//*return !areClockwise(sectorStartLatitude, sectorStartLongitude, relPointLatitude, relPointLongitude) &&
+                areClockwise(sectorEndLatitude, sectorEndLongitude, relPointLatitude, relPointLongitude) &&
+                isWithinRadius(relPointLatitude, relPointLongitude, radius*radius);*//*
+    }*/
+
+    private boolean isWithinRadius(double vx, double vy, double radius) {
+        double radiusSquared = radius*radius;
+        return (vx*vx + vy*vy) <= radiusSquared;
+    }
+
+    private boolean areClockwise(double v1x, double v1y, double v2x, double v2y) {
+        return ((- v1x)*v2y + v1y*v2x) > 0;
     }
 
     /*public TblModel fillUpTable(){
