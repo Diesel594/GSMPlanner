@@ -181,7 +181,7 @@ public class GSMPlannerModel {
         // начиная с нижней широты, мы поднимаемся к верхней с шагом в 5 км в градусах
         for (double latitude = workMap.getBottomLatitude(); latitude < workMap.getTopLatitude(); latitude = latitude + longitudeKilometerLength * 5.0) {
             // начиная с левой долготы, двигаемся вправо с шагом 5 км в градусах
-            for (double longitude = workMap.getLeftLongitude(); latitude < workMap.getRightLongitude(); longitude = latitudeKilometerLength * 5.0) {
+            for (double longitude = workMap.getLeftLongitude(); longitude < workMap.getRightLongitude(); longitude = latitudeKilometerLength * 5.0) {
 
                 //TODO: изменение опорной точки сектора вместе с изменением номера четверти
                 //можно даже попробовать изменение координат через функцию от номера четверти
@@ -282,9 +282,9 @@ public class GSMPlannerModel {
         return false;
     }
 
-    private boolean isInsideArea(double latitude, double longitude, double latitudeKilometerLength, double longtitudeKilometerLength, double objectLatitude, double objectLongitude) {
+    private boolean isInsideArea(double latitude, double longitude, double latitudeKilometerLength, double longitudeKilometerLength, double objectLatitude, double objectLongitude) {
         return (objectLatitude >= latitude) &&
-                (objectLatitude <= (latitude + (longtitudeKilometerLength * 5))) &&
+                (objectLatitude <= (latitude + (longitudeKilometerLength * 5))) &&
                 (objectLongitude >= longitude) &&
                 (objectLongitude <= (longitude + (latitudeKilometerLength * 5)));
     }
@@ -294,13 +294,19 @@ public class GSMPlannerModel {
                                    double sectorStartLatitude, double sectorStartLongitude,
                                    double sectorEndLatitude, double sectorEndLongitude,
                                    double radius) {
+        if ((objectLatitude == sectorLatitude) && (objectLongitude == sectorLongitude))
+            return true;
+
         double radiusSquared = Math.pow(radius, 2);
         double relPointLatitude = objectLatitude - sectorLatitude;
         double relPointLongitude = objectLongitude - sectorLongitude;
 
-        return !areClockwise(sectorLatitude, sectorLongitude, relPointLatitude, relPointLongitude) &&
-                areClockwise(sectorEndLatitude, sectorLongitude, relPointLatitude, relPointLongitude) &&
+        return !areClockwise(sectorStartLatitude, sectorStartLongitude, relPointLatitude, relPointLongitude) &&
+                areClockwise(sectorEndLatitude, sectorEndLongitude, relPointLatitude, relPointLongitude) &&
                 isWithinRadius(relPointLatitude, relPointLongitude, radius);
+        /*return !areClockwise(sectorLatitude, sectorLongitude, relPointLatitude, relPointLongitude) &&
+                areClockwise(sectorEndLatitude, sectorLongitude, relPointLatitude, relPointLongitude) &&
+                isWithinRadius(relPointLatitude, relPointLongitude, radius);*/
     }
 
     private boolean isWithinRadius(double latitude, double longitude, double radius) {
@@ -309,7 +315,7 @@ public class GSMPlannerModel {
     }
 
     private boolean areClockwise(double v1Latitude, double v1Longitude, double v2Latitude, double v2Longitude) {
-        return (v1Longitude*v2Latitude - v1Latitude*v2Longitude) > 0;
+        return ((- v1Latitude)*v2Longitude + v1Longitude*v2Latitude) > 0;
     }
 
     public double getPlaneX(double latitude, double longitude) {
@@ -376,15 +382,14 @@ public class GSMPlannerModel {
         }
         //перебираем дома в секторе
         for (House house : workMap.getHouses()) {
-            if (
-                    isInsideSector(
-                            house.getLatitude(), house.getLongitude(),
-                            sectorLatitude, sectorLongitude,
-                            sectorStartLatitude, sectorStartLongitude,
-                            sectorEndLatitude,sectorEndLongitude,
-                            Math.max(latitudeKilometerLength,longitudeKilometerLength))
-                    )
-                customersCount = customersCount + house.getPopulation();
+            boolean isInside = isInsideSector(
+                    house.getLatitude(), house.getLongitude(),
+                    sectorLatitude, sectorLongitude,
+                    sectorStartLatitude, sectorStartLongitude,
+                    sectorEndLatitude,sectorEndLongitude,
+                    Math.max(latitudeKilometerLength,longitudeKilometerLength));
+            if (isInside)
+                    customersCount = customersCount + house.getPopulation();
         }
         return customersCount;
     }
