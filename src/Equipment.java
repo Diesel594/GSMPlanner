@@ -2,24 +2,32 @@
  * Created by Gerz on 07.06.2015.
  */
 public abstract class Equipment {
-    private double posX;
-    private double posY;
+    private double longitude;
+    private double latitude;
     private int capacity;
     private double price;
 
-    public Equipment(double posX, double posY, int capacity, double price){
-        this.posX = posX;
-        this.posY = posY;
+    public Equipment(double longitude, double latitude, int capacity, double price){
+        this.longitude = longitude;
+        this.latitude = latitude;
         this.capacity = capacity;
         this.price = price;
     }
 
-    public double getPosX(){
-        return this.posX;
+    public double getLongitude(){
+        return this.longitude;
     }
 
-    public double getPosY(){
-        return this.posY;
+    public double getLatitude(){
+        return this.latitude;
+    }
+
+    public double getX() {
+        return GSMPlannerModel.R * Math.cos(latitude) * Math.cos(longitude);
+    }
+
+    public double getY() {
+        return GSMPlannerModel.R * Math.cos(latitude) * Math.sin(longitude);
     }
 
     public double getPrice(){
