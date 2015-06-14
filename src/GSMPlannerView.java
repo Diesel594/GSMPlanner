@@ -5,7 +5,8 @@ import java.awt.event.ActionListener;
 
 public class GSMPlannerView extends JFrame{
     private JLabel lblBrowse = new JLabel("Файл с координатами: ");
-    private JTextField txtBrowse = new JTextField("", 1000);
+    //TODO: Убрать путь до файла с данными
+    private JTextField txtBrowse = new JTextField("C:\\Users\\Gerz\\IdeaProjects\\GSMPlanner\\data.csv", 1000);
     private JButton btnBrowse = new JButton("Обзор...");
     private JButton btnCalculate = new JButton("Расчитать");
     private JTable tblResult = new JTable();
