@@ -23,11 +23,11 @@ public abstract class Equipment {
     }
 
     public double getX() {
-        return GSMPlannerModel.R * Math.cos(latitude) * Math.cos(longitude);
+        return GSMPlannerModel.EARTH_RADIUS  * Math.cos(latitude) * Math.cos(longitude);
     }
 
     public double getY() {
-        return GSMPlannerModel.R * Math.cos(latitude) * Math.sin(longitude);
+        return GSMPlannerModel.EARTH_RADIUS  * Math.cos(latitude) * Math.sin(longitude);
     }
 
     public double getPrice(){
