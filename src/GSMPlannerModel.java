@@ -256,18 +256,12 @@ public class GSMPlannerModel {
 
     //TODO:Проверить правильность вычисления LatitudeKilometerLength
     private double getLatitudeKilometerLength (double latitude) {
-        /*double rlat = deg2rad(latitude); // Переводим широту в радианы
-        double metersInDegree = 111132.92 - 559.82*Math.cos(2 * rlat) + 1.175*Math.cos(4*rlat); // Вычисляем количество метров в градусе широты
-        return 1000/metersInDegree; // Вычисляем значение 1000 метров в градусах*/
-        //Из-за неточности в вичислениях по формулам длину одного градуса меридиана возьмем const = 111.3
         return 1/111.3;
     }
 
     //TODO: проверить правильность вычисления longitudeKilometerLength
     private double getLongitudeKilometerLength (double longitude) {
         double rlon = deg2rad(longitude);
-        //double metersInDegree = 111412.84 * Math.cos(rlon) - 93.5 * Math.cos(3 * rlon); // Вычисляем количество метров в градусе долготы
-        //return 1000/metersInDegree; // Вычисляем значение 1000 метров в градусах
         return 1/111.3*Math.cos(rlon);
     }
 
@@ -280,11 +274,11 @@ public class GSMPlannerModel {
         return false;
     }
 
-    private boolean isInsideArea(double latitude, double longitude, double latitudeKilometerLength, double longitudeKilometerLength, double objectLatitude, double objectLongitude) {
+    private boolean isInsideArea(double latitude, double longitude, double latitude5KmLength, double longitude5KmLength, double objectLatitude, double objectLongitude) {
         return (objectLatitude >= latitude) &&
-                (objectLatitude <= (latitude + (longitudeKilometerLength * 5))) &&
+                (objectLatitude <= (latitude + (longitude5KmLength))) &&
                 (objectLongitude >= longitude) &&
-                (objectLongitude <= (longitude + (latitudeKilometerLength * 5)));
+                (objectLongitude <= (longitude + (latitude5KmLength)));
     }
 
 
@@ -323,28 +317,28 @@ public class GSMPlannerModel {
         int customersCount = 0;
 
         switch (direction) {
-            case 1: sectorStartLongitude = sectorLongitude + longitude5KmLength * 1;
+            case 1: sectorStartLongitude = sectorLongitude + latitude5KmLength * 1;
                     sectorStartLatitude = sectorLatitude + longitude5KmLength * 0;
                     sectorEndLongitude = sectorLongitude + latitude5KmLength * 0;
                     sectorEndLatitude = sectorLatitude + longitude5KmLength * 1;
                     break;
 
-            case 2: sectorStartLongitude = sectorLongitude + longitude5KmLength * 0;
+            case 2: sectorStartLongitude = sectorLongitude + latitude5KmLength * 0;
                     sectorStartLatitude = sectorLatitude + longitude5KmLength * 1;
                     sectorEndLongitude = sectorLongitude + latitude5KmLength * -1;
                     sectorEndLatitude = sectorLatitude + longitude5KmLength * 0;
                     break;
 
-            case 3: sectorStartLongitude = sectorLongitude + longitude5KmLength * 5 * -1;
-                    sectorStartLatitude = sectorLatitude + longitude5KmLength * 5 * 0;
-                    sectorEndLongitude = sectorLongitude + latitude5KmLength * 5 * 0;
-                    sectorEndLatitude = sectorLatitude + longitude5KmLength * 5 * 1;
+            case 3: sectorStartLongitude = sectorLongitude + latitude5KmLength * -1;
+                    sectorStartLatitude = sectorLatitude + longitude5KmLength * 0;
+                    sectorEndLongitude = sectorLongitude + latitude5KmLength * 0;
+                    sectorEndLatitude = sectorLatitude + longitude5KmLength * 1;
                     break;
 
-            case 4: sectorStartLongitude = sectorLongitude + longitude5KmLength * 5 * 0;
-                    sectorStartLatitude = sectorLatitude + longitude5KmLength * 5 * -1;
-                    sectorEndLongitude = sectorLongitude + latitude5KmLength * 5 * 1;
-                    sectorEndLatitude = sectorLatitude + longitude5KmLength * 5 * 0;
+            case 4: sectorStartLongitude = sectorLongitude + latitude5KmLength * 0;
+                    sectorStartLatitude = sectorLatitude + longitude5KmLength * -1;
+                    sectorEndLongitude = sectorLongitude + latitude5KmLength * 1;
+                    sectorEndLatitude = sectorLatitude + longitude5KmLength * 0;
                     break;
 
             default:
@@ -352,12 +346,6 @@ public class GSMPlannerModel {
         }
         //перебираем дома в секторе
         for (House house : workMap.getHouses()) {
-            /*boolean isInside = isInsideSector(
-                    deg2rad(house.getLatitude()), deg2rad(house.getLongitude()),
-                    deg2rad(sectorLatitude), deg2rad(sectorLongitude),
-                    deg2rad(sectorStartLatitude), deg2rad(sectorStartLongitude),
-                    deg2rad(sectorEndLatitude), deg2rad(sectorEndLongitude),
-                    Math.max(deg2rad(latitudeKilometerLength), deg2rad(longitudeKilometerLength)));*/
             boolean isInside = isInsideSector(
                     house.getLatitude(), house.getLongitude(),
                     sectorLatitude, sectorLongitude,
@@ -382,17 +370,11 @@ public class GSMPlannerModel {
         double relPointLatitude = objectLatitude - sectorLatitude;
         double relPointLongitude = objectLongitude - sectorLongitude;
 
-//        return !areClockwise(sectorStartLongitude, sectorStartLatitude, objectLongitude, objectLatitude) &&
-//                areClockwise(sectorEndLongitude, sectorEndLatitude, objectLongitude, objectLatitude) &&
-//                isWithinRadius(relPointLongitude, relPointLatitude, radius*radius);
-        boolean startClockwise =areClockwise(sectorStartLatitude, sectorStartLongitude, relPointLatitude, relPointLongitude);
+        boolean startClockwise = areClockwise(sectorStartLatitude, sectorStartLongitude, relPointLatitude, relPointLongitude);
         boolean endClockwise = areClockwise(sectorEndLatitude, sectorEndLongitude, relPointLatitude, relPointLongitude);
         boolean withinRadius = isInCircle(objectLatitude, objectLongitude, sectorLatitude, sectorLongitude, radius);
 
         return !startClockwise && endClockwise && withinRadius;
-        /*return !areClockwise(sectorStartLatitude, sectorStartLongitude, relPointLatitude, relPointLongitude) &&
-                areClockwise(sectorEndLatitude, sectorEndLongitude, relPointLatitude, relPointLongitude) &&
-                isWithinRadius(relPointLatitude, relPointLongitude, radius*radius);*/
     }
 
     private boolean isInCircle(double objLatitude, double objLongitude,
@@ -401,35 +383,13 @@ public class GSMPlannerModel {
         return (Math.pow((objLatitude - sectorLatitude),2) - Math.pow((objLongitude - sectorLongitude),2) < Math.pow(radius,2));
     }
 
-
-    /*private boolean isInsideSector(double objectLatitude, double objectLongitude,
-                                   double sectorLatitude, double sectorLongitude,
-                                   double sectorStartLatitude, double sectorStartLongitude,
-                                   double sectorEndLatitude, double sectorEndLongitude,
-                                   double radius) {
-
-        if ((objectLatitude == sectorLatitude) && (objectLongitude == sectorLongitude))
-            return true;
-
-        double relPointLatitude = objectLatitude - sectorLatitude;
-        double relPointLongitude = objectLongitude - sectorLongitude;
-
-        return !areClockwise(sectorStartLongitude, sectorStartLatitude, relPointLongitude, relPointLatitude) &&
-                areClockwise(sectorEndLongitude, sectorEndLatitude, relPointLongitude, relPointLatitude) &&
-                isWithinRadius(relPointLongitude, relPointLatitude, radius*radius);
-
-        *//*return !areClockwise(sectorStartLatitude, sectorStartLongitude, relPointLatitude, relPointLongitude) &&
-                areClockwise(sectorEndLatitude, sectorEndLongitude, relPointLatitude, relPointLongitude) &&
-                isWithinRadius(relPointLatitude, relPointLongitude, radius*radius);*//*
-    }*/
-
     private boolean isWithinRadius(double vx, double vy, double radius) {
         double radiusSquared = radius*radius;
         return (vx*vx + vy*vy) <= radiusSquared;
     }
 
     private boolean areClockwise(double v1x, double v1y, double v2x, double v2y) {
-        return ((- v1x)*v2y + v1y*v2x) > 0;
+        return (((v1y*v2x) - (v1x*v2y)) > 0);
     }
 
     /*public TblModel fillUpTable(){
