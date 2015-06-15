@@ -126,6 +126,16 @@ public class GSMPlannerView extends JFrame{
             txtResult.append("\n");
         }
         txtResult.append("\tИтого сотовых станций: "+ String.valueOf(workMap.getCellularStations().size() + "\n\n"));
+
+        txtResult.append("Перечень базовых станций: \n");
+        for (BaseStation baseStation: workMap.getBaseStations()){
+            txtResult.append("Базовая станция: ");
+            txtResult.append(String.valueOf(baseStation.getLatitude()));
+            txtResult.append(", ");
+            txtResult.append(String.valueOf(baseStation.getLongitude()));
+            txtResult.append("\n");
+        }
+        txtResult.append("\tИтого базовых станций: "+ String.valueOf(workMap.getBaseStations().size() + "\n\n"));
     }
 
     public void showInfo(String info) {

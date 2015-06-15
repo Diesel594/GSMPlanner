@@ -16,6 +16,8 @@ public class GSMPlannerModel {
     final double CONNECTION_STATION_PRICE = 10000;
     final int CELLULAR_STATION_CAPACITY = 5000;
     final double CELLULAR_STATION_PRICE = 100000;
+    final int BASE_STATION_CAPACITY = 200000;
+    final double BASE_STATION_PRICE = 100000;
 
 
     private WorkMap workMap;
@@ -293,6 +295,8 @@ public class GSMPlannerModel {
         // В случае, если стоймость установки одной станции связи меньше чем двух, то ставить одну
         if (totalCost < priceTriangle1 + priceTriangle2){
             ConnectionStation connectionStation = new ConnectionStation(stationX, stationY, CONNECTION_STATION_CAPACITY, CONNECTION_STATION_PRICE);
+            for (Sector sector : workMap.getSectors())
+                sector.setConnectionStation(connectionStation);
             workMap.addConnectionStation(connectionStation);
             return;
         }
@@ -373,6 +377,23 @@ public class GSMPlannerModel {
         }
     }
 
+    private void placeDoubleTriangleBaseStations(double x1, double y1, double x2, double y2, double x3, double y3, double currentPrice){
+        // делим существующий треугольник  по длинной стороне
+        if (getDistance(x1, y1, x2, y2) > getDistance(x1, y1, x3, y3) && getDistance(x1, y1, x2, y2) > getDistance(x2, y2, x3, y3)) {
+            // делим сторону x1y1-x2y2
+            placeSingleTriangleBaseStation(x1, y1, (x1 + (x2 - x1) / 2), (y1 + (y2 - y1) / 2), x3, y3, currentPrice);
+            placeSingleTriangleBaseStation((x1 + (x2 - x1) / 2), (y1 + (y2 - y1) / 2), x2, y2, x3, y3, currentPrice);
+        }else if (getDistance(x2, y2, x3, y3) > getDistance(x1, y1, x2, y2) && getDistance(x2, y2, x3, y3) > getDistance(x1, y1, x3, y3)) {
+            // делим сторону x2y2-x3y3
+            placeSingleTriangleBaseStation(x1, y1, x2, y2, (x2 + (x3 - x2) / 2), (y2 + (y3 - y2) / 2), currentPrice);
+            placeSingleTriangleBaseStation(x1, y1, (x2 + (x3 - x2) / 2), (y2 + (y3 - y2) / 2), x3, y3, currentPrice);
+        }else{
+            // деллим сторону x1y1-x3y3
+            placeSingleTriangleBaseStation(x1, y1, x2, y2, (x1 + (x3 - x1) / 2), (y1 + (y3 - y1) / 2), currentPrice);
+            placeSingleTriangleBaseStation((x1 + (x3 - x1) / 2), (y1 + (y3 - y1) / 2), x2, y2, x3, y3, currentPrice);
+        }
+    }
+
     private void placeSingleTriangleCellularStation(double x1, double y1, double x2, double y2, double x3, double y3, double currentPrice) {
         // решить, может две станции обойдутся дешевле
         if (getDoubleTriangleCellularStationPrice(x1, y1, x2, y2, x3, y3) < currentPrice) {
@@ -403,6 +424,44 @@ public class GSMPlannerModel {
                     }
                 }
                 workMap.addCellularStation(cellularStation);
+            }
+        }
+    }
+
+    private void placeSingleTriangleBaseStation(double x1, double y1, double x2, double y2, double x3, double y3, double currentPrice) {
+        // решить, может две станции обойдутся дешевле
+        if (getDoubleTriangleBaseStationPrice(x1, y1, x2, y2, x3, y3) < currentPrice) {
+            placeDoubleTriangleBaseStations(x1, y1, x2, y2, x3, y3, getDoubleTriangleBaseStationPrice(x1, y1, x2, y2, x3, y3));
+        } else {
+
+            // установка станции
+            double middleX = (x1 + x2 + x3) / 3;
+            double middleY = (y1 + y2 + y3) / 3;
+            int connectionCustomers = getPossibleConnectionCustomersInTrianlge(x1, y1, x2, y2, x3, y3);
+            int connectedCustomers = 0;
+
+            // необходимо опосредовано, через секторы, подключить всех пользователей в треугольнике
+            while (connectedCustomers < connectionCustomers) {
+                BaseStation baseStation = new BaseStation(middleX, middleY, BASE_STATION_CAPACITY, BASE_STATION_PRICE);
+                //перебираем станции связи, которые планируем подключить
+
+                for (CellularStation cellularStation: workMap.getCellularStations()) {
+                    // станция связи находится в треугольнике
+                    if (isInTriangle(x1, y1, x2, y2, x3, y3, cellularStation.getLongitude(), cellularStation.getLatitude())) {
+                        // станция связи ни к кому не подключена
+                        if (cellularStation.getBaseStation()== null) {
+                            cellularStation.setBaseStation(baseStation);
+                            for (ConnectionStation connectionStation : workMap.getConnectionStations()) {
+                                if (connectionStation.getCellularStation()==cellularStation)
+                                    for (Sector sector : workMap.getSectors()) {
+                                        if (sector.getConnectionStation() == connectionStation)
+                                            connectedCustomers = connectedCustomers + sector.getCustomers();
+                                    }
+                            }
+                        }
+                    }
+                }
+                workMap.addBaseStation(baseStation);
             }
         }
     }
@@ -520,6 +579,55 @@ public class GSMPlannerModel {
         return resultPrice;
     }
 
+    double getPriceBaseStationInTriangle(double x1, double y1, double x2, double y2, double x3, double y3) {
+        double resultPrice = 0;
+        double sumX = 0;
+        double sumY = 0;
+        double cellularStationCount = 0;
+        double stationX = 0;
+        double stationY = 0;
+
+        //вычисление средней точки
+        for (ConnectionStation connectionStation: workMap.getConnectionStations()){
+            if (isInTriangle(x1,y1,x2,y2,x3,y3,connectionStation.getLongitude(),connectionStation.getLatitude())) {
+                sumX = sumX + connectionStation.getLongitude();
+                sumY = sumY + connectionStation.getLatitude();
+                cellularStationCount++;
+            }
+        }
+        stationX = sumX / cellularStationCount;
+        stationY = sumY / cellularStationCount;
+
+        //подсчет количества абонентов
+        int customers = 0;
+        for (CellularStation cellularStation: workMap.getCellularStations()){
+            if (isInTriangle(x1, y1, x2, y2, x3, y3, cellularStation.getLongitude(), cellularStation.getLatitude())) {
+                for (ConnectionStation connectionStation : workMap.getConnectionStations()) {
+                    if (connectionStation.getCellularStation() == cellularStation)
+                    for (Sector sector : workMap.getSectors()) {
+                        if (sector.getConnectionStation() == connectionStation)
+                            customers = customers + sector.getCustomers();
+                    }
+                }
+            }
+        }
+        //подключение всех абонентов в треугольнике
+        int connectedCustomers = 0;
+        //подсчет стоимости всех станций на данной точке
+        resultPrice = resultPrice + (customers / (int)BASE_STATION_CAPACITY) * BASE_STATION_PRICE;
+        if (customers % BASE_STATION_CAPACITY != 0) resultPrice =resultPrice+ BASE_STATION_PRICE;
+
+        for (CellularStation cellularStation: workMap.getCellularStations()){
+            if (isInTriangle(x1, y1, x2, y2, x3, y3, stationX, stationY)) {
+                resultPrice = resultPrice + getDistance(stationX, stationY, cellularStation.getLongitude(), cellularStation.getLatitude());
+            }
+        }
+
+        return resultPrice;
+    }
+
+
+
     // подсчет стоимости двухзонной установки
     double getDoubleTriangleCellularStationPrice(double x1, double y1, double x2, double y2, double x3, double y3) {
         double resultPrice = 0;
@@ -538,6 +646,29 @@ public class GSMPlannerModel {
             // деллим сторону x1y1-x3y3
             double priceTriangle1 = getPriceCellularStationInTriangle(x1, y1, x2, y2, (x1 + (x3 - x1) / 2), (y1 + (y3 - y1) / 2));
             double priceTriangle2 = getPriceCellularStationInTriangle((x1 + (x3 - x1) / 2), (y1 + (y3 - y1) / 2), x2, y2, x3, y3);
+            resultPrice = priceTriangle1 + priceTriangle2;
+        }
+
+        return resultPrice;
+    }
+
+    double getDoubleTriangleBaseStationPrice(double x1, double y1, double x2, double y2, double x3, double y3) {
+        double resultPrice = 0;
+        // делим существующий треугольник  по длинной стороне
+        if (getDistance(x1, y1, x2, y2) > getDistance(x1, y1, x3, y3) && getDistance(x1, y1, x2, y2) > getDistance(x2, y2, x3, y3)) {
+            // делим сторону x1y1-x2y2
+            double priceTriangle1 = getPriceBaseStationInTriangle(x1, y1, (x1 + (x2 - x1) / 2), (y1 + (y2 - y1) / 2), x3, y3);
+            double priceTriangle2 = getPriceBaseStationInTriangle((x1 + (x2 - x1) / 2), (y1 + (y2 - y1) / 2), x2, y2, x3, y3);
+            resultPrice = priceTriangle1 + priceTriangle2;
+        }else if (getDistance(x2, y2, x3, y3) > getDistance(x1, y1, x2, y2) && getDistance(x2, y2, x3, y3) > getDistance(x1, y1, x3, y3)) {
+            // делим сторону x2y2-x3y3
+            double priceTriangle1 = getPriceBaseStationInTriangle(x1, y1, x2, y2, (x2 + (x3 - x2) / 2), (y2 + (y3 - y2) / 2));
+            double priceTriangle2 = getPriceBaseStationInTriangle(x1, y1, (x2 + (x3 - x2) / 2), (y2 + (y3 - y2) / 2), x3, y3);
+            resultPrice = priceTriangle1 + priceTriangle2;
+        }else{
+            // деллим сторону x1y1-x3y3
+            double priceTriangle1 = getPriceBaseStationInTriangle(x1, y1, x2, y2, (x1 + (x3 - x1) / 2), (y1 + (y3 - y1) / 2));
+            double priceTriangle2 = getPriceBaseStationInTriangle((x1 + (x3 - x1) / 2), (y1 + (y3 - y1) / 2), x2, y2, x3, y3);
             resultPrice = priceTriangle1 + priceTriangle2;
         }
 
@@ -590,6 +721,8 @@ public class GSMPlannerModel {
         // В случае, если стоймость установки одной станции связи меньше чем двух, то ставить одну
         if (totalCost < priceTriangle1 + priceTriangle2){
             CellularStation cellularStation= new CellularStation(stationX, stationY, CELLULAR_STATION_CAPACITY, CELLULAR_STATION_PRICE);
+            for (ConnectionStation connectionStation : workMap.getConnectionStations())
+                connectionStation.setCellularStation(cellularStation);
             workMap.addCellularStation(cellularStation);
             return;
         }
@@ -607,7 +740,73 @@ public class GSMPlannerModel {
     }
 
     public void placeBaseStations() {
-        //TODO: написать функцию установки базовых станцию
+        double sumX = 0;
+        double sumY = 0;
+        double stationX = 0;
+        double stationY = 0;
+        int cellularStationCount = 0;
+        double totalCost = 0;
+        int customers = 0;
+        // перебираем все секторы и считаем количество подключений на секторе
+        for (CellularStation cellularStation: workMap.getCellularStations()){
+            sumX = sumX + cellularStation.getLongitude();
+            sumY = sumY + cellularStation.getLatitude();
+            for (ConnectionStation connectionStation : workMap.getConnectionStations()) {
+                if (connectionStation.getCellularStation() == cellularStation)
+                for (Sector sector : workMap.getSectors())
+                    if (sector.getConnectionStation() == connectionStation)
+                        customers = customers + sector.getCustomers();
+            }
+            cellularStationCount++;
+        }
+        totalCost = 0;
+        // складываем все координаты и делим на количество станций. Получаем среднюю точку для установки сотовой станции
+        stationX = sumX / cellularStationCount;
+        stationY = sumY / cellularStationCount;
+        // Перебираем сотовые станции и считаем стоимость подключения к одной базовой станции
+        for (CellularStation cellularStation: workMap.getCellularStations()) {
+            double distanceBaseCellular = getDistance(stationY, stationX, cellularStation.getLatitude(), cellularStation.getLongitude());
+            totalCost = totalCost + distanceBaseCellular* WIRE_PRICE;
+        }
+        //Считаем стоимость станций, нобходимых для установки
+        totalCost = totalCost + (customers / (int)BASE_STATION_CAPACITY) * BASE_STATION_PRICE;
+        if (customers % BASE_STATION_CAPACITY != 0) totalCost = totalCost + BASE_STATION_PRICE;
+
+        //посчитать стоимость альтернативной установки
+        int secondTotalCost = 0;
+        // разбиваем на два треугольника
+        // считаем стоимость установки двух станций.
+        double priceTriangle1 = getPriceCellularStationInTriangle(
+                workMap.getLeftLongitude(), workMap.getBottomLatitude(),
+                workMap.getLeftLongitude(), workMap.getTopLatitude(),
+                workMap.getRightLongitude(), workMap.getBottomLatitude());
+        double priceTriangle2 = getPriceCellularStationInTriangle(
+                workMap.getLeftLongitude(), workMap.getTopLatitude(),
+                workMap.getRightLongitude(), workMap.getTopLatitude(),
+                workMap.getRightLongitude(), workMap.getBottomLatitude());
+
+        // В случае, если стоймость установки одной базовой станции меньше чем двух, то ставить одну
+        if (totalCost < priceTriangle1 + priceTriangle2){
+            BaseStation baseStation = new BaseStation(stationX, stationY, BASE_STATION_CAPACITY, BASE_STATION_PRICE);
+            // установка БС для всех сотстанцицй
+            /*for (CellularStation cellularStation : workMap.getCellularStations()) {
+                cellularStation.setBaseStation(baseStation);
+            }*/
+            workMap.addBaseStation(baseStation);
+            return;
+        }
+
+        // Ставим две станции
+        placeSingleTriangleCellularStation(workMap.getLeftLongitude(), workMap.getBottomLatitude(),
+                workMap.getLeftLongitude(), workMap.getTopLatitude(),
+                workMap.getRightLongitude(), workMap.getBottomLatitude(), priceTriangle1);
+        placeSingleTriangleCellularStation(workMap.getLeftLongitude(), workMap.getTopLatitude(),
+                workMap.getRightLongitude(), workMap.getTopLatitude(),
+                workMap.getRightLongitude(), workMap.getBottomLatitude(), priceTriangle2);
+
+
+
+
     }
 
     private void generateMap() {
