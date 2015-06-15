@@ -183,7 +183,16 @@ public class GSMPlannerModel {
                     }
 
                     // установка в карту лучшего решения с указанием четверти
-                    workMap.addSector(new Sector(latitude, longitude, bestQuarter, SECTOR_CAPACITY, SECTOR_PRICE, maxCustomers));
+                    int connectedCustomers = 0;
+                    while (connectedCustomers < maxCustomers) {
+                        int tmpCustomers = 0;
+                        if (maxCustomers - connectedCustomers > SECTOR_CAPACITY)
+                            tmpCustomers = SECTOR_CAPACITY;
+                        else
+                            tmpCustomers = maxCustomers - connectedCustomers;
+                        workMap.addSector(new Sector(longitude, latitude, bestQuarter, SECTOR_CAPACITY, SECTOR_PRICE, tmpCustomers));
+                        connectedCustomers = connectedCustomers + tmpCustomers;
+                    }
 
                     // определение необходимости установки дополнительного сектора
 
@@ -251,48 +260,49 @@ public class GSMPlannerModel {
             customers = customers + sector.getCustomers();
             sectorCount++;
         }
-        totalCost = CONNECTION_STATION_PRICE;
-        // если количество жителей не превышает емкости одной станции
-        if (customers <= CONNECTION_STATION_CAPACITY) {
-            // то считаем стоимость подключения к этой станции
-            // складываем все координаты и делим на количество домов. Получаем среднюю точку для установки станции
-            stationX = sumX / sectorCount;
-            stationY = sumY / sectorCount;
-            // Перебираем секторы и считаем стоимость подключения
-            for (Sector sector : workMap.getSectors()) {
-                double distanceConnStationSector = getDistance(stationY, stationX, sector.getLatitude(), sector.getLongitude());
-                totalCost = totalCost + distanceConnStationSector * WIRE_PRICE;
-            }
-
-
-            //посчитать стоимость альтернативной установки
-            int secondTotalCost = 0;
-            // разбиваем на два треугольника
-            // считаем стоимость установки двух станций.
-            double priceTriangle1 = getPriceConnectionStationInTriangle(
-                    workMap.getLeftLongitude(), workMap.getBottomLatitude(),
-                    workMap.getLeftLongitude(), workMap.getTopLatitude(),
-                    workMap.getRightLongitude(), workMap.getBottomLatitude());
-            double priceTriangle2 = getPriceConnectionStationInTriangle(
-                    workMap.getLeftLongitude(), workMap.getTopLatitude(),
-                    workMap.getRightLongitude(), workMap.getTopLatitude(),
-                    workMap.getRightLongitude(), workMap.getBottomLatitude());
-
-            // В случае, если стоймость установки одной станции связи меньше чем двух, то ставить одну
-            if (totalCost < priceTriangle1 + priceTriangle2){
-                ConnectionStation connectionStation = new ConnectionStation(stationX, stationY, CONNECTION_STATION_CAPACITY, CONNECTION_STATION_PRICE);
-                workMap.addConnectionStation(connectionStation);
-                return;
-            }
-
-            // Ставим две станции
-            placeSingleTriangleConnectionStation(workMap.getLeftLongitude(), workMap.getBottomLatitude(),
-                    workMap.getLeftLongitude(), workMap.getTopLatitude(),
-                    workMap.getRightLongitude(), workMap.getBottomLatitude(),priceTriangle1);
-            placeSingleTriangleConnectionStation(workMap.getLeftLongitude(), workMap.getTopLatitude(),
-                    workMap.getRightLongitude(), workMap.getTopLatitude(),
-                    workMap.getRightLongitude(), workMap.getBottomLatitude(), priceTriangle2);
+        totalCost = 0;
+        // складываем все координаты и делим на количество домов. Получаем среднюю точку для установки станции
+        stationX = sumX / sectorCount;
+        stationY = sumY / sectorCount;
+        // Перебираем секторы и считаем стоимость подключения к одной станции
+        //totalCost = totalCost + CONNECTION_STATION_PRICE;
+        for (Sector sector : workMap.getSectors()) {
+            double distanceConnStationSector = getDistance(stationY, stationX, sector.getLatitude(), sector.getLongitude());
+            totalCost = totalCost + distanceConnStationSector * WIRE_PRICE;
         }
+        //Считаем стоимость станций, нобходимых для установки
+        totalCost = totalCost + (customers / (int)CONNECTION_STATION_CAPACITY) * CONNECTION_STATION_PRICE;
+        if (customers % CONNECTION_STATION_CAPACITY != 0) totalCost = totalCost + CONNECTION_STATION_PRICE;
+
+        //посчитать стоимость альтернативной установки
+        int secondTotalCost = 0;
+        // разбиваем на два треугольника
+        // считаем стоимость установки двух станций.
+        double priceTriangle1 = getPriceConnectionStationInTriangle(
+                workMap.getLeftLongitude(), workMap.getBottomLatitude(),
+                workMap.getLeftLongitude(), workMap.getTopLatitude(),
+                workMap.getRightLongitude(), workMap.getBottomLatitude());
+        double priceTriangle2 = getPriceConnectionStationInTriangle(
+                workMap.getLeftLongitude(), workMap.getTopLatitude(),
+                workMap.getRightLongitude(), workMap.getTopLatitude(),
+                workMap.getRightLongitude(), workMap.getBottomLatitude());
+
+        // В случае, если стоймость установки одной станции связи меньше чем двух, то ставить одну
+        if (totalCost < priceTriangle1 + priceTriangle2){
+            ConnectionStation connectionStation = new ConnectionStation(stationX, stationY, CONNECTION_STATION_CAPACITY, CONNECTION_STATION_PRICE);
+            workMap.addConnectionStation(connectionStation);
+            return;
+        }
+
+        // Ставим две станции
+        placeSingleTriangleConnectionStation(workMap.getLeftLongitude(), workMap.getBottomLatitude(),
+                workMap.getLeftLongitude(), workMap.getTopLatitude(),
+                workMap.getRightLongitude(), workMap.getBottomLatitude(),priceTriangle1);
+        placeSingleTriangleConnectionStation(workMap.getLeftLongitude(), workMap.getTopLatitude(),
+                workMap.getRightLongitude(), workMap.getTopLatitude(),
+                workMap.getRightLongitude(), workMap.getBottomLatitude(), priceTriangle2);
+
+
     }
 
     private void placeSingleTriangleConnectionStation(double x1, double y1, double x2, double y2, double x3, double y3, double currentPrice) {
@@ -354,9 +364,11 @@ public class GSMPlannerModel {
 
         //вычисление средней точки
         for (Sector sector: workMap.getSectors()){
-            sumX = sumX + sector.getLongitude();
-            sumY = sumY + sector.getLatitude();
-            sectorCount++;
+            if (isInTriangle(x1,y1,x2,y2,x3,y3,sector.getLongitude(),sector.getLatitude())) {
+                sumX = sumX + sector.getLongitude();
+                sumY = sumY + sector.getLatitude();
+                sectorCount++;
+            }
         }
         stationX = sumX / sectorCount;
         stationY = sumY / sectorCount;
@@ -364,7 +376,7 @@ public class GSMPlannerModel {
         //подсчет количества абонентов
         int customers = 0;
         for (Sector sector: workMap.getSectors()){
-            if (isInTriangle(x1, y1, x2, y2, x3, y3, stationX, stationY)) {
+            if (isInTriangle(x1, y1, x2, y2, x3, y3, sector.getLongitude(), sector.getLatitude())) {
                 customers = customers + sector.getCustomers();
             }
         }
@@ -523,7 +535,7 @@ public class GSMPlannerModel {
         return customersCount;
     }
 
-    private boolean isInsideSector(double objectLatitude, double objectLongitude,
+    /*private boolean isInsideSector(double objectLatitude, double objectLongitude,
                                    double sectorLatitude, double sectorLongitude,
                                    double sectorStartLatitude, double sectorStartLongitude,
                                    double sectorEndLatitude, double sectorEndLongitude,
@@ -535,12 +547,21 @@ public class GSMPlannerModel {
         double relPointLatitude = objectLatitude - sectorLatitude;
         double relPointLongitude = objectLongitude - sectorLongitude;
 
-        boolean startClockwise = areClockwise(sectorStartLatitude, sectorStartLongitude, relPointLatitude, relPointLongitude);
-        boolean endClockwise = areClockwise(sectorEndLatitude, sectorEndLongitude, relPointLatitude, relPointLongitude);
-        boolean withinRadius = isInCircle(objectLatitude, objectLongitude, sectorLatitude, sectorLongitude, radius);
+        boolean startClockwise = areClockwise(sectorStartLongitude, sectorStartLatitude, relPointLongitude, relPointLatitude);
+        boolean endClockwise = areClockwise(sectorEndLongitude, sectorEndLatitude, relPointLongitude, relPointLatitude);
+        boolean withinRadius = isWithinRadius(objectLongitude, objectLatitude, radius);
 
-        return !startClockwise && endClockwise && withinRadius;
+        return (!startClockwise) && endClockwise && withinRadius;
+    }*/
+    private boolean isInsideSector(double objectLatitude, double objectLongitude,
+                                   double sectorLatitude, double sectorLongitude,
+                                   double sectorStartLatitude, double sectorStartLongitude,
+                                   double sectorEndLatitude, double sectorEndLongitude,
+                                   double radius) {
+
+        return isInTriangle(sectorLongitude, sectorLatitude, sectorStartLongitude, sectorStartLatitude, sectorEndLongitude, sectorEndLatitude,objectLongitude, objectLatitude);
     }
+
 
     private int getPossibleSectorCustomersInTrianlge(double x1, double y1, double x2, double y2, double x3, double y3) {
         // перебираем все дома и проверяем их пренадлежность к треугольнику. Считаем количество клиентов.

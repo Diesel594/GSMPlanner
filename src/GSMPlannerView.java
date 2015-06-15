@@ -100,9 +100,7 @@ public class GSMPlannerView extends JFrame{
             txtResult.append(String.valueOf(sector.getLatitude()));
             txtResult.append(", ");
             txtResult.append(String.valueOf(sector.getLongitude()));
-            txtResult.append(", ");
-            txtResult.append(String.valueOf(sector.getDirection()));
-            txtResult.append(" четверть\n");
+            txtResult.append("\n");
         }
         txtResult.append("\tИтого секторов: "+ String.valueOf(workMap.getSectors().size() + "\n\n"));
 
