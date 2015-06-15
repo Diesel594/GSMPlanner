@@ -508,10 +508,8 @@ public class GSMPlannerModel {
         //подключение всех абонентов в треугольнике
         int connectedCustomers = 0;
         //подсчет стоимости всех станций на данной точке
-        while (connectedCustomers < customers) {
-            resultPrice = resultPrice + CONNECTION_STATION_PRICE;
-            connectedCustomers = connectedCustomers + CONNECTION_STATION_CAPACITY;
-        }
+        resultPrice = resultPrice + (customers / (int)CELLULAR_STATION_CAPACITY) * CELLULAR_STATION_PRICE;
+        if (customers % CELLULAR_STATION_CAPACITY != 0) resultPrice =resultPrice+ CELLULAR_STATION_PRICE;
         //подсчет стоимости подключений секторов к станциям
         for (Sector sector: workMap.getSectors()){
             if (isInTriangle(x1, y1, x2, y2, x3, y3, stationX, stationY)) {
@@ -608,7 +606,7 @@ public class GSMPlannerModel {
 
     }
 
-    private void placeBaseStations() {
+    public void placeBaseStations() {
         //TODO: написать функцию установки базовых станцию
     }
 
