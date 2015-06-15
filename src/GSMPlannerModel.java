@@ -4,13 +4,16 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.lang.Math.*;
 
 //Класс описания модели поведения
 public class GSMPlannerModel {
     final static double EARTH_RADIUS = 6371.0; //Примерный радиус Земли
+    final double WIRE_PRICE = 100;
+    final double WIREKESS_PRICE = 10;
     final int SECTOR_CAPACITY = 100;
     final double SECTOR_PRICE = 1000;
+    final int CONNECTION_STATION_CAPACITY = 1000;
+    final double CONNECTION_STATION_PRICE = 10000;
 
     private WorkMap workMap;
 
@@ -143,26 +146,6 @@ public class GSMPlannerModel {
         return (deg * Math.PI / 180.0);
     }
 
-    /*private double getX(double latitude, double longitude) {
-        return GSMPlannerModel.R * Math.cos(latitude) * Math.cos(longitude);
-    }
-
-    public double getY(double latitude, double longitude) {
-        return GSMPlannerModel.R * Math.cos(latitude) * Math.sin(longitude);
-    }
-
-    public double getZ(double latitude) {
-        return GSMPlannerModel.R * Math.sin(latitude);
-    }
-
-    public double getLatitude(double z) {
-        return Math.asin(z / R);
-    }
-
-    public double getLongitude (double x, double y) {
-        return Math.atan2(y, x);
-    }*/
-
     // Получает в градусах, считает в радианах, возвращает расстояние в КМ
     public double getDistance(double lat1, double lon1, double lat2, double lon2) {
         double theta = lon1 - lon2;
@@ -200,7 +183,10 @@ public class GSMPlannerModel {
                     }
 
                     // установка в карту лучшего решения с указанием четверти
-                    workMap.addSector(new Sector(latitude, longitude, bestQuarter, SECTOR_CAPACITY, SECTOR_PRICE));
+                    workMap.addSector(new Sector(latitude, longitude, bestQuarter, SECTOR_CAPACITY, SECTOR_PRICE, maxCustomers));
+
+                    // определение необходимости установки дополнительного сектора
+
 
                     // определение необходимости установки зеркального сектора
                     int customersInArea = getCustomersInArea(latitude, longitude, latitude5KmLength, longitude5KmLength);
@@ -231,7 +217,16 @@ public class GSMPlannerModel {
                                 quarter = 2;
                                 break;
                         }
-                        workMap.addSector(new Sector(latitude, longitude, quarter, SECTOR_CAPACITY, SECTOR_PRICE));
+                        int sectorCustomers = getPossibleSectorCustomersInArea(latitude, longitude, latitude5KmLength, longitude5KmLength, quarter);
+                        int servedCustomers = 0;
+                        while (sectorCustomers >= 100) {
+                            if (sectorCustomers >= 100)
+                                servedCustomers = 100;
+                            else
+                                servedCustomers = sectorCustomers % 100;
+                            sectorCustomers = servedCustomers - servedCustomers;
+                            workMap.addSector(new Sector(latitude, longitude, quarter, SECTOR_CAPACITY, SECTOR_PRICE, servedCustomers));
+                        }
                     }
                 }
             }
@@ -239,7 +234,222 @@ public class GSMPlannerModel {
     }
 
     private void placeConnectionStations() {
-        //TODO: написать фунццию установки станций связи
+        // Счстаем, возможно-ли окучить всех клиентов одной станцией и сколько это будет стоить
+        // Емкость 1000 соединений
+        // переменные для вычисления средней точки и цены подключения к ней
+        double sumX = 0;
+        double sumY = 0;
+        double stationX = 0;
+        double stationY = 0;
+        int sectorCount = 0;
+        double totalCost = 0;
+        int customers = 0;
+        // перебираем все секторы и считаем количество подключений на секторе
+        for (Sector sector: workMap.getSectors()){
+            sumX = sumX + sector.getLongitude();
+            sumY = sumY + sector.getLatitude();
+            customers = customers + sector.getCustomers();
+            sectorCount++;
+        }
+        totalCost = CONNECTION_STATION_PRICE;
+        // если количество жителей не превышает емкости одной станции
+        if (customers <= CONNECTION_STATION_CAPACITY) {
+            // то считаем стоимость подключения к этой станции
+            // складываем все координаты и делим на количество домов. Получаем среднюю точку для установки станции
+            stationX = sumX / sectorCount;
+            stationY = sumY / sectorCount;
+            // Перебираем секторы и считаем стоимость подключения
+            for (Sector sector : workMap.getSectors()) {
+                double distanceConnStationSector = getDistance(stationY, stationX, sector.getLatitude(), sector.getLongitude());
+                totalCost = totalCost + distanceConnStationSector * WIRE_PRICE;
+            }
+
+
+            //посчитать стоимость альтернативной установки
+            int secondTotalCost = 0;
+            // разбиваем на два треугольника
+            // считаем стоимость установки двух станций.
+            double priceTriangle1 = getPriceConnectionStationInTriangle(
+                    workMap.getLeftLongitude(), workMap.getBottomLatitude(),
+                    workMap.getLeftLongitude(), workMap.getTopLatitude(),
+                    workMap.getRightLongitude(), workMap.getBottomLatitude());
+            double priceTriangle2 = getPriceConnectionStationInTriangle(
+                    workMap.getLeftLongitude(), workMap.getTopLatitude(),
+                    workMap.getRightLongitude(), workMap.getTopLatitude(),
+                    workMap.getRightLongitude(), workMap.getBottomLatitude());
+
+            // В случае, если стоймость установки одной станции связи меньше чем двух, то ставить одну
+            if (totalCost < priceTriangle1 + priceTriangle2){
+                ConnectionStation connectionStation = new ConnectionStation(stationX, stationY, CONNECTION_STATION_CAPACITY, CONNECTION_STATION_PRICE);
+                workMap.addConnectionStation(connectionStation);
+                return;
+            }
+
+            // Ставим две станции
+
+            // Снова решаем, одна или две станции
+            if (getDoubleTriangleConnectionStationPrice(
+                    workMap.getLeftLongitude(), workMap.getBottomLatitude(),
+                    workMap.getLeftLongitude(), workMap.getTopLatitude(),
+                    workMap.getRightLongitude(), workMap.getBottomLatitude()) < priceTriangle1) {
+                double currentPrice = getDoubleTriangleConnectionStationPrice(
+                        workMap.getLeftLongitude(), workMap.getBottomLatitude(),
+                        workMap.getLeftLongitude(), workMap.getTopLatitude(),
+                        workMap.getRightLongitude(), workMap.getBottomLatitude());
+                placeDoubleTriangleConnectionStations(workMap.getLeftLongitude(), workMap.getBottomLatitude(),
+                        workMap.getLeftLongitude(), workMap.getTopLatitude(),
+                        workMap.getRightLongitude(), workMap.getBottomLatitude(), currentPrice);
+            }else{
+                placeSingleTriangleConnectionStation(workMap.getLeftLongitude(), workMap.getBottomLatitude(),
+                        workMap.getLeftLongitude(), workMap.getTopLatitude(),
+                        workMap.getRightLongitude(), workMap.getBottomLatitude(), priceTriangle1);
+            }
+
+            if (getDoubleTriangleConnectionStationPrice(
+                    workMap.getLeftLongitude(), workMap.getTopLatitude(),
+                    workMap.getRightLongitude(), workMap.getTopLatitude(),
+                    workMap.getRightLongitude(), workMap.getBottomLatitude()) < priceTriangle2) {
+                double currentPrice = getDoubleTriangleConnectionStationPrice(
+                        workMap.getLeftLongitude(), workMap.getTopLatitude(),
+                        workMap.getRightLongitude(), workMap.getTopLatitude(),
+                        workMap.getRightLongitude(), workMap.getBottomLatitude());
+                placeDoubleTriangleConnectionStations(workMap.getLeftLongitude(), workMap.getTopLatitude(),
+                        workMap.getRightLongitude(), workMap.getTopLatitude(),
+                        workMap.getRightLongitude(), workMap.getBottomLatitude(), currentPrice);
+            }else{
+                placeSingleTriangleConnectionStation(workMap.getLeftLongitude(), workMap.getTopLatitude(),
+                        workMap.getRightLongitude(), workMap.getTopLatitude(),
+                        workMap.getRightLongitude(), workMap.getBottomLatitude(), priceTriangle2);
+            }
+        }
+    }
+
+    void placeSingleTriangleConnectionStation(double x1, double y1, double x2, double y2, double x3, double y3, double currentPrice) {
+        // утсановка станции
+        double middleX = (x1 + x2 + x3)/3;
+        double middleY = (y1 + x2 + y3)/3;
+        int sectorCustomers = getPossibleSectorCustomersInTrianlge(x1, y1, x2, y2, x3, y3);
+        int connectedCustomers = 0;
+
+        // необходимо опосредовано, через секторы, подключить всех пользователей в треугольнике
+        while (connectedCustomers < sectorCustomers) {
+            ConnectionStation connectionStation = new ConnectionStation(middleX, middleY, CONNECTION_STATION_CAPACITY, CONNECTION_STATION_PRICE);
+            //перебираем секторы, которые планируем подключить
+            for (Sector sector : workMap.getSectors()) {
+                // сектор находится в треугольнике
+                if (isInTriangle(x1,y1,x2,y2,x3,y3,sector.getLongitude(),sector.getLatitude())){
+                    //сектор ни к кому не подключен
+                    if (sector.getConnectionStation() == null) {
+                        sector.setConnectionStation(connectionStation);
+                        connectedCustomers = connectedCustomers + sector.getCustomers();
+                    }
+                }
+            }
+            workMap.addConnectionStation(connectionStation);
+        }
+    }
+
+    void placeDoubleTriangleConnectionStations(double x1, double y1, double x2, double y2, double x3, double y3, double currentPrice){
+
+        // делим существующий треугольник  по длинной стороне
+        if (getDistance(x1, y1, x2, y2) > getDistance(x1, y1, x3, y3) && getDistance(x1, y1, x2, y2) > getDistance(x2, y2, x3, y3)) {
+            // делим сторону x1y1-x2y2
+            double middleX = (x1 + (x1 + (x2 - x1)/2) + x3)/3;
+            double middleY = (y1 + (y1 + (y2 - y1)/2) + y3)/3;
+            ConnectionStation connectionStation = new ConnectionStation(middleX, middleY,CONNECTION_STATION_CAPACITY, CONNECTION_STATION_PRICE);
+            workMap.addConnectionStation(connectionStation);
+            middleX = ((x1 + (x2 - x1)/2) + x2 + x3)/3;
+            middleY = ((y1 + (y2 - y1)/2) + y2 + y3)/3;
+            connectionStation = new ConnectionStation(middleX, middleY,CONNECTION_STATION_CAPACITY, CONNECTION_STATION_PRICE);
+            workMap.addConnectionStation(connectionStation);
+        }else if (getDistance(x2, y2, x3, y3) > getDistance(x1, y1, x2, y2) && getDistance(x2, y2, x3, y3) > getDistance(x1, y1, x3, y3)) {
+            // делим сторону x2y2-x3y3
+            double middleX = (x1 + x2 + (x2 + (x3 - x2)/2))/3;
+            double middleY = (y1 + y2 + (y2 + (y3 - y2)/2))/3;
+            ConnectionStation connectionStation = new ConnectionStation(middleX, middleY,CONNECTION_STATION_CAPACITY, CONNECTION_STATION_PRICE);
+            workMap.addConnectionStation(connectionStation);
+            middleX = (x1 + (x2 + (x3 - x2)/2) + x3)/3;
+            middleY = (y1 + (y2 + (y3 - y2)/2) + y3)/3;
+            connectionStation = new ConnectionStation(middleX, middleY,CONNECTION_STATION_CAPACITY, CONNECTION_STATION_PRICE);
+            workMap.addConnectionStation(connectionStation);
+        }else{
+            // деллим сторону x1y1-x3y3
+            double middleX = (x1 + x2 + (x1 + (x3-x1)/2))/3;
+            double middleY = (y1 + y2 + (y1 + (y3-y1)/2))/3;
+            ConnectionStation connectionStation = new ConnectionStation(middleX, middleY,CONNECTION_STATION_CAPACITY, CONNECTION_STATION_PRICE);
+            workMap.addConnectionStation(connectionStation);
+            middleX = ((x1 + (x3-x1)/2) + x2 + x3)/3;
+            middleY = ((y1 + (y3-y1)/2) + y2 + y3)/3;
+            connectionStation = new ConnectionStation(middleX, middleY,CONNECTION_STATION_CAPACITY, CONNECTION_STATION_PRICE);
+            workMap.addConnectionStation(connectionStation);
+        }
+        //устанавливаем
+    }
+
+    // подсчет стоимости установки в треугольнике
+    double getPriceConnectionStationInTriangle(double x1, double y1, double x2, double y2, double x3, double y3) {
+        double resultPrice = 0;
+        double sumX = 0;
+        double sumY = 0;
+        double sectorCount = 0;
+        double stationX = 0;
+        double stationY = 0;
+
+        //вычисление средней точки
+        for (Sector sector: workMap.getSectors()){
+            sumX = sumX + sector.getLongitude();
+            sumY = sumY + sector.getLatitude();
+            sectorCount++;
+        }
+        stationX = sumX / sectorCount;
+        stationY = sumY / sectorCount;
+
+        //подсчет количества абонентов
+        int customers = 0;
+        for (Sector sector: workMap.getSectors()){
+            if (isInTriangle(x1, y1, x2, y2, x3, y3, stationX, stationY)) {
+                customers = customers + sector.getCustomers();
+            }
+        }
+        //подключение всех абонентов в треугольнике
+        int connectedCustomers = 0;
+        //подсчет стоимости всех станций на данной точке
+        while (connectedCustomers < customers) {
+            resultPrice = resultPrice + CONNECTION_STATION_PRICE;
+            connectedCustomers = connectedCustomers + CONNECTION_STATION_CAPACITY;
+        }
+        //подсчет стоимости подключений секторов к станциям
+        for (Sector sector: workMap.getSectors()){
+            if (isInTriangle(x1, y1, x2, y2, x3, y3, stationX, stationY)) {
+                resultPrice = resultPrice + getDistance(stationX, stationY, sector.getLongitude(), sector.getLatitude());
+            }
+        }
+
+        return resultPrice;
+    }
+
+    // подсчет стоимости двухзонной установки
+    double getDoubleTriangleConnectionStationPrice(double x1, double y1, double x2, double y2, double x3, double y3) {
+        double resultPrice = 0;
+        // делим существующий треугольник  по длинной стороне
+        if (getDistance(x1, y1, x2, y2) > getDistance(x1, y1, x3, y3) && getDistance(x1, y1, x2, y2) > getDistance(x2, y2, x3, y3)) {
+            // делим сторону x1y1-x2y2
+            double priceTriangle1 = getPriceConnectionStationInTriangle(x1, y1, (x1 + (x2 - x1) / 2), (y1 + (y2 - y1) / 2), x3, y3);
+            double priceTriangle2 = getPriceConnectionStationInTriangle((x1 + (x2 - x1) / 2), (y1 + (y2 - y1) / 2), x2, y2, x3, y3);
+            resultPrice = priceTriangle1 + priceTriangle2;
+        }else if (getDistance(x2, y2, x3, y3) > getDistance(x1, y1, x2, y2) && getDistance(x2, y2, x3, y3) > getDistance(x1, y1, x3, y3)) {
+            // делим сторону x2y2-x3y3
+            double priceTriangle1 = getPriceConnectionStationInTriangle(x1, y1, x2, y2, (x2 + (x3 - x2) / 2), (y2 + (y3 - y2) / 2));
+            double priceTriangle2 = getPriceConnectionStationInTriangle(x1, y1, (x2 + (x3 - x2) / 2), (y2 + (y3 - y2) / 2), x3, y3);
+            resultPrice = priceTriangle1 + priceTriangle2;
+        }else{
+            // деллим сторону x1y1-x3y3
+            double priceTriangle1 = getPriceConnectionStationInTriangle(x1, y1, x2, y2, (x1 + (x3 - x1) / 2), (y1 + (y3 - y1) / 2));
+            double priceTriangle2 = getPriceConnectionStationInTriangle((x1 + (x3 - x1) / 2), (y1 + (y3 - y1) / 2), x2, y2, x3, y3);
+            resultPrice = priceTriangle1 + priceTriangle2;
+        }
+
+        return resultPrice;
     }
 
     private void placeCellularStations() {
@@ -254,12 +464,10 @@ public class GSMPlannerModel {
         //TODO: попробовать сгенерировать карту с нанесенными на ней станциямим и секторами
     }
 
-    //TODO:Проверить правильность вычисления LatitudeKilometerLength
     private double getLatitudeKilometerLength (double latitude) {
         return 1/111.3;
     }
 
-    //TODO: проверить правильность вычисления longitudeKilometerLength
     private double getLongitudeKilometerLength (double longitude) {
         double rlon = deg2rad(longitude);
         return 1/111.3*Math.cos(rlon);
@@ -377,6 +585,16 @@ public class GSMPlannerModel {
         return !startClockwise && endClockwise && withinRadius;
     }
 
+    private int getPossibleSectorCustomersInTrianlge(double x1, double y1, double x2, double y2, double x3, double y3) {
+        // перебираем все дома и проверяем их пренадлежность к треугольнику. Считаем количество клиентов.
+        int customersCount = 0;
+        for (Sector sector : workMap.getSectors()) {
+            if (isInTriangle(x1, y1, x2, y2, x3, y3, sector.getLongitude(), sector.getLatitude()))
+                customersCount = customersCount + sector.getCustomers();
+        }
+        return customersCount;
+    }
+
     private boolean isInCircle(double objLatitude, double objLongitude,
                                double sectorLatitude, double sectorLongitude,
                                double radius) {
@@ -392,21 +610,11 @@ public class GSMPlannerModel {
         return (((v1y*v2x) - (v1x*v2y)) > 0);
     }
 
-    /*public TblModel fillUpTable(){
-        //ArrayList<String[]> myData;
-        TblModel model; // наша модель таблицы
-        int countNewRow = 0;
-        String[] columnNames = {"Equipment",
-                "Latitude",
-                "Longitude",
-                "Capacity",
-                "Price"};
-        tblArray = new ArrayList<String[]>();
-        tblArray.add(new String[]{"1", "2", "3", "4", "5"});
-        tblArray.add(new String[]{"11", "21", "31", "41", "51"});
-        tblArray.add(new String[]{"12", "22", "32", "42", "52"});
-        tblArray.add(new String[]{"13", "23", "33", "43", "53"});
-        model = new TblModel(tblArray);
-        return model;
-    }*/
+    private boolean isInTriangle(double x1, double y1, double x2, double y2, double x3, double y3, double x0, double y0) {
+        double a = (x1 - x0) * (y2 - y1) - (x2 - x1) * (y1 - y0);
+        double b = (x2 - x0) * (y3 - y2) - (x3 - x2) * (y2 - y0);
+        double c = (x3 - x0) * (y1 - y3) - (x1 - x3) * (y3 - y0);
+
+        return ((a >= 0 && b >= 0 && c >= 0) || (a <= 0 && b <= 0 && c <= 0));
+    }
 }
