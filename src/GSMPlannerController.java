@@ -41,9 +41,10 @@ public class GSMPlannerController {
                         plannerModel.fillUpMapWithHouses(houseList);
                         //Добавление секторов
                         plannerModel.placeSectors();
+                        //Проба запуска установки станций связи
+                        plannerModel.placeConnectionStations();
                         //Вывод всех данных
                         plannerView.showResult(plannerModel.getWorkMap());
-
                     }
                     //Вывод координат
                     // TblModel filledModel = plannerModel.fillUpTable();

@@ -233,7 +233,7 @@ public class GSMPlannerModel {
         }
     }
 
-    private void placeConnectionStations() {
+    public void placeConnectionStations() {
         // Счстаем, возможно-ли окучить всех клиентов одной станцией и сколько это будет стоить
         // Емкость 1000 соединений
         // переменные для вычисления средней точки и цены подключения к ней
@@ -286,104 +286,61 @@ public class GSMPlannerModel {
             }
 
             // Ставим две станции
-
-            // Снова решаем, одна или две станции
-            if (getDoubleTriangleConnectionStationPrice(
-                    workMap.getLeftLongitude(), workMap.getBottomLatitude(),
+            placeSingleTriangleConnectionStation(workMap.getLeftLongitude(), workMap.getBottomLatitude(),
                     workMap.getLeftLongitude(), workMap.getTopLatitude(),
-                    workMap.getRightLongitude(), workMap.getBottomLatitude()) < priceTriangle1) {
-                double currentPrice = getDoubleTriangleConnectionStationPrice(
-                        workMap.getLeftLongitude(), workMap.getBottomLatitude(),
-                        workMap.getLeftLongitude(), workMap.getTopLatitude(),
-                        workMap.getRightLongitude(), workMap.getBottomLatitude());
-                placeDoubleTriangleConnectionStations(workMap.getLeftLongitude(), workMap.getBottomLatitude(),
-                        workMap.getLeftLongitude(), workMap.getTopLatitude(),
-                        workMap.getRightLongitude(), workMap.getBottomLatitude(), currentPrice);
-            }else{
-                placeSingleTriangleConnectionStation(workMap.getLeftLongitude(), workMap.getBottomLatitude(),
-                        workMap.getLeftLongitude(), workMap.getTopLatitude(),
-                        workMap.getRightLongitude(), workMap.getBottomLatitude(), priceTriangle1);
-            }
-
-            if (getDoubleTriangleConnectionStationPrice(
-                    workMap.getLeftLongitude(), workMap.getTopLatitude(),
+                    workMap.getRightLongitude(), workMap.getBottomLatitude(),priceTriangle1);
+            placeSingleTriangleConnectionStation(workMap.getLeftLongitude(), workMap.getTopLatitude(),
                     workMap.getRightLongitude(), workMap.getTopLatitude(),
-                    workMap.getRightLongitude(), workMap.getBottomLatitude()) < priceTriangle2) {
-                double currentPrice = getDoubleTriangleConnectionStationPrice(
-                        workMap.getLeftLongitude(), workMap.getTopLatitude(),
-                        workMap.getRightLongitude(), workMap.getTopLatitude(),
-                        workMap.getRightLongitude(), workMap.getBottomLatitude());
-                placeDoubleTriangleConnectionStations(workMap.getLeftLongitude(), workMap.getTopLatitude(),
-                        workMap.getRightLongitude(), workMap.getTopLatitude(),
-                        workMap.getRightLongitude(), workMap.getBottomLatitude(), currentPrice);
-            }else{
-                placeSingleTriangleConnectionStation(workMap.getLeftLongitude(), workMap.getTopLatitude(),
-                        workMap.getRightLongitude(), workMap.getTopLatitude(),
-                        workMap.getRightLongitude(), workMap.getBottomLatitude(), priceTriangle2);
-            }
+                    workMap.getRightLongitude(), workMap.getBottomLatitude(), priceTriangle2);
         }
     }
 
-    void placeSingleTriangleConnectionStation(double x1, double y1, double x2, double y2, double x3, double y3, double currentPrice) {
-        // утсановка станции
-        double middleX = (x1 + x2 + x3)/3;
-        double middleY = (y1 + x2 + y3)/3;
-        int sectorCustomers = getPossibleSectorCustomersInTrianlge(x1, y1, x2, y2, x3, y3);
-        int connectedCustomers = 0;
+    private void placeSingleTriangleConnectionStation(double x1, double y1, double x2, double y2, double x3, double y3, double currentPrice) {
+        // решить, может две станции обойдутся дешевле
+        if (getDoubleTriangleConnectionStationPrice(x1, y1, x2, y2, x3, y3) < currentPrice) {
+             placeDoubleTriangleConnectionStations(x1, y1, x2, y2, x3, y3, getDoubleTriangleConnectionStationPrice(x1, y1, x2, y2, x3, y3));
+        } else {
 
-        // необходимо опосредовано, через секторы, подключить всех пользователей в треугольнике
-        while (connectedCustomers < sectorCustomers) {
-            ConnectionStation connectionStation = new ConnectionStation(middleX, middleY, CONNECTION_STATION_CAPACITY, CONNECTION_STATION_PRICE);
-            //перебираем секторы, которые планируем подключить
-            for (Sector sector : workMap.getSectors()) {
-                // сектор находится в треугольнике
-                if (isInTriangle(x1,y1,x2,y2,x3,y3,sector.getLongitude(),sector.getLatitude())){
-                    //сектор ни к кому не подключен
-                    if (sector.getConnectionStation() == null) {
-                        sector.setConnectionStation(connectionStation);
-                        connectedCustomers = connectedCustomers + sector.getCustomers();
+            // установка станции
+            double middleX = (x1 + x2 + x3) / 3;
+            double middleY = (y1 + x2 + y3) / 3;
+            int sectorCustomers = getPossibleSectorCustomersInTrianlge(x1, y1, x2, y2, x3, y3);
+            int connectedCustomers = 0;
+
+            // необходимо опосредовано, через секторы, подключить всех пользователей в треугольнике
+            while (connectedCustomers < sectorCustomers) {
+                ConnectionStation connectionStation = new ConnectionStation(middleX, middleY, CONNECTION_STATION_CAPACITY, CONNECTION_STATION_PRICE);
+                //перебираем секторы, которые планируем подключить
+                for (Sector sector : workMap.getSectors()) {
+                    // сектор находится в треугольнике
+                    if (isInTriangle(x1, y1, x2, y2, x3, y3, sector.getLongitude(), sector.getLatitude())) {
+                        //сектор ни к кому не подключен
+                        if (sector.getConnectionStation() == null) {
+                            sector.setConnectionStation(connectionStation);
+                            connectedCustomers = connectedCustomers + sector.getCustomers();
+                        }
                     }
                 }
+                workMap.addConnectionStation(connectionStation);
             }
-            workMap.addConnectionStation(connectionStation);
         }
     }
 
-    void placeDoubleTriangleConnectionStations(double x1, double y1, double x2, double y2, double x3, double y3, double currentPrice){
-
+    private void placeDoubleTriangleConnectionStations(double x1, double y1, double x2, double y2, double x3, double y3, double currentPrice){
         // делим существующий треугольник  по длинной стороне
         if (getDistance(x1, y1, x2, y2) > getDistance(x1, y1, x3, y3) && getDistance(x1, y1, x2, y2) > getDistance(x2, y2, x3, y3)) {
             // делим сторону x1y1-x2y2
-            double middleX = (x1 + (x1 + (x2 - x1)/2) + x3)/3;
-            double middleY = (y1 + (y1 + (y2 - y1)/2) + y3)/3;
-            ConnectionStation connectionStation = new ConnectionStation(middleX, middleY,CONNECTION_STATION_CAPACITY, CONNECTION_STATION_PRICE);
-            workMap.addConnectionStation(connectionStation);
-            middleX = ((x1 + (x2 - x1)/2) + x2 + x3)/3;
-            middleY = ((y1 + (y2 - y1)/2) + y2 + y3)/3;
-            connectionStation = new ConnectionStation(middleX, middleY,CONNECTION_STATION_CAPACITY, CONNECTION_STATION_PRICE);
-            workMap.addConnectionStation(connectionStation);
+            placeSingleTriangleConnectionStation(x1, y1, (x1 + (x2 - x1)/2), (y1 + (y2 - y1)/2), x3, y3, currentPrice);
+            placeSingleTriangleConnectionStation((x1 + (x2 - x1)/2), (y1 + (y2 - y1)/2), x2, y2, x3, y3,currentPrice);
         }else if (getDistance(x2, y2, x3, y3) > getDistance(x1, y1, x2, y2) && getDistance(x2, y2, x3, y3) > getDistance(x1, y1, x3, y3)) {
             // делим сторону x2y2-x3y3
-            double middleX = (x1 + x2 + (x2 + (x3 - x2)/2))/3;
-            double middleY = (y1 + y2 + (y2 + (y3 - y2)/2))/3;
-            ConnectionStation connectionStation = new ConnectionStation(middleX, middleY,CONNECTION_STATION_CAPACITY, CONNECTION_STATION_PRICE);
-            workMap.addConnectionStation(connectionStation);
-            middleX = (x1 + (x2 + (x3 - x2)/2) + x3)/3;
-            middleY = (y1 + (y2 + (y3 - y2)/2) + y3)/3;
-            connectionStation = new ConnectionStation(middleX, middleY,CONNECTION_STATION_CAPACITY, CONNECTION_STATION_PRICE);
-            workMap.addConnectionStation(connectionStation);
+            placeSingleTriangleConnectionStation(x1,y1,x2,y2,(x2 + (x3 - x2)/2),(y2 + (y3 - y2)/2),currentPrice);
+            placeSingleTriangleConnectionStation(x1,y1,(x2 + (x3 - x2)/2), (y2 + (y3 - y2)/2),x3,y3,currentPrice);
         }else{
             // деллим сторону x1y1-x3y3
-            double middleX = (x1 + x2 + (x1 + (x3-x1)/2))/3;
-            double middleY = (y1 + y2 + (y1 + (y3-y1)/2))/3;
-            ConnectionStation connectionStation = new ConnectionStation(middleX, middleY,CONNECTION_STATION_CAPACITY, CONNECTION_STATION_PRICE);
-            workMap.addConnectionStation(connectionStation);
-            middleX = ((x1 + (x3-x1)/2) + x2 + x3)/3;
-            middleY = ((y1 + (y3-y1)/2) + y2 + y3)/3;
-            connectionStation = new ConnectionStation(middleX, middleY,CONNECTION_STATION_CAPACITY, CONNECTION_STATION_PRICE);
-            workMap.addConnectionStation(connectionStation);
+            placeSingleTriangleConnectionStation(x1,y1,x2,y2,(x1 + (x3-x1)/2), (y1 + (y3-y1)/2),currentPrice);
+            placeSingleTriangleConnectionStation((x1 + (x3-x1)/2), (y1 + (y3-y1)/2), x2, y2, x3, y3,currentPrice);
         }
-        //устанавливаем
     }
 
     // подсчет стоимости установки в треугольнике

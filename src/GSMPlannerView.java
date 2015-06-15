@@ -102,10 +102,20 @@ public class GSMPlannerView extends JFrame{
             txtResult.append(String.valueOf(sector.getLongitude()));
             txtResult.append(", ");
             txtResult.append(String.valueOf(sector.getDirection()));
-            txtResult.append("четверть\n");
+            txtResult.append(" четверть\n");
         }
         txtResult.append("\tИтого секторов: "+ String.valueOf(workMap.getSectors().size() + "\n\n"));
 
+        txtResult.append("Перечень станций связи: \n");
+        for (ConnectionStation connectionStation : workMap.getConnectionStations()){
+            txtResult.append("Станция связи: ");
+            txtResult.append(String.valueOf(connectionStation.getLatitude()));
+            txtResult.append(", ");
+            txtResult.append(String.valueOf(connectionStation.getLongitude()));
+            txtResult.append("\n");
+        }
+        txtResult.append("\tИтого станций связи: "+ String.valueOf(workMap.getConnectionStations()
+                .size() + "\n\n"));
     }
 
     public void showInfo(String info) {

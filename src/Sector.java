@@ -1,20 +1,26 @@
 public class Sector extends Equipment {
-    private CellularStation cellularStation;
+    private ConnectionStation connectionStation;
     private int direction;
-    public Sector(double latitude, double longitude, int direction, int capacity, double price) {
+    private int customers;
+    public Sector(double latitude, double longitude, int direction, int capacity, double price, int customers) {
         super(latitude, longitude, capacity, price);
         this.direction = direction;
+        this.customers = customers;
     }
 
     public int getDirection(){
         return this.direction;
     }
 
-    public void setCellularStation(CellularStation cellularStation){
-        this.cellularStation = cellularStation;
+    public int getCustomers() {
+        return customers;
     }
 
-    public CellularStation getCellularStation() {
-        return this.cellularStation;
+    public ConnectionStation getConnectionStation() {
+        return connectionStation;
+    }
+
+    public void setConnectionStation(ConnectionStation connectionStation) {
+        this.connectionStation = connectionStation;
     }
 }
