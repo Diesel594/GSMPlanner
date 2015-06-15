@@ -44,6 +44,7 @@ public class GSMPlannerController {
                         //Проба запуска установки станций связи
                         plannerModel.placeConnectionStations();
                         //Вывод всех данных
+                        plannerModel.placeCellularStations();
                         plannerView.showResult(plannerModel.getWorkMap());
                     }
                     //Вывод координат

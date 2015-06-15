@@ -1,18 +1,15 @@
-/**
- * Created by Gerz on 07.06.2015.
- */
 public class CellularStation extends Equipment {
-    private ConnectionStation connectionStation;
+    private BaseStation baseStation;
 
     public CellularStation(double posX, double posY, int capacity, double price) {
         super(posX, posY, capacity, price);
     }
 
-    public void setConnectionStation(ConnectionStation connectionStation){
-        this.connectionStation = connectionStation;
+    public BaseStation getBaseStation() {
+        return baseStation;
     }
 
-    public ConnectionStation getConnectionStation(){
-        return this.connectionStation;
+    public void setBaseStation(BaseStation baseStation) {
+        this.baseStation = baseStation;
     }
 }

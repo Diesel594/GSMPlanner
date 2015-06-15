@@ -12,6 +12,7 @@ public class GSMPlannerView extends JFrame{
     private JTable tblResult = new JTable();
     private JPanel gsmPlannerPanel = new JPanel(new GridBagLayout());
     private JTextArea txtResult = new JTextArea();
+    private JScrollPane scrlResult = new JScrollPane(txtResult);
 
     public GSMPlannerView() {
         //Размещаем объекты управления
@@ -58,7 +59,8 @@ public class GSMPlannerView extends JFrame{
         constraints.gridheight = GridBagConstraints.RELATIVE;
         constraints.insets = new Insets(15,5,0,0);
         constraints.anchor = GridBagConstraints.NORTH;
-        gsmPlannerPanel.add(txtResult,constraints);
+        scrlResult.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+        gsmPlannerPanel.add(txtResult, constraints);
 
 
 
@@ -114,6 +116,16 @@ public class GSMPlannerView extends JFrame{
         }
         txtResult.append("\tИтого станций связи: "+ String.valueOf(workMap.getConnectionStations()
                 .size() + "\n\n"));
+
+        txtResult.append("Перечень сотовых станций: \n");
+        for (CellularStation cellularStation: workMap.getCellularStations()){
+            txtResult.append("Сотовая станция: ");
+            txtResult.append(String.valueOf(cellularStation.getLatitude()));
+            txtResult.append(", ");
+            txtResult.append(String.valueOf(cellularStation.getLongitude()));
+            txtResult.append("\n");
+        }
+        txtResult.append("\tИтого сотовых станций: "+ String.valueOf(workMap.getCellularStations().size() + "\n\n"));
     }
 
     public void showInfo(String info) {
